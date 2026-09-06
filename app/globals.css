@@ -1,26 +1,500 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ==========================================================================
+   NISIR DESIGNS — design system
+   Palette, type scale and surfaces come from the Nisir brand board:
+   Midnight Navy #0B1626 · Rich Gold #D4AF37 · Soft Ivory #F8F6ED
+   Slate Gray #64748B · Deep Charcoal #1A1F26
+   ========================================================================== */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Dark styling applies when the OS asks for it (unless the visitor forced
+   light) or when the visitor explicitly chose dark. */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"] *) {
+    @slot;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------------------------------- tokens -------------------------------- */
+
+:root {
+  /* Brand constants — identical in both themes */
+  --nisir-navy: #0b1626;
+  --nisir-navy-deep: #060d17;
+  --nisir-charcoal: #1a1f26;
+  --nisir-gold: #d4af37;
+  --nisir-gold-light: #e6cc77;
+  --nisir-ivory: #f8f6ed;
+  --nisir-slate: #64748b;
+
+  /* Semantic — light theme is the default */
+  --bg: #f7f5ec;
+  --bg-deep: #efebdd;
+  --surface: rgb(255 255 255 / 0.68);
+  --surface-solid: #fffdf5;
+  --fg: #0b1626;
+  --fg-muted: #515c6b;
+  --fg-subtle: #7a8494;
+  --line: rgb(11 22 38 / 0.12);
+  --line-strong: rgb(11 22 38 / 0.24);
+  --accent: #8f7119;
+  --accent-bright: #d4af37;
+  --glow: rgb(212 175 55 / 0.3);
+  /* Daylight surfaces need real depth; at night the border carries it. */
+  --card-shadow: 0 1px 2px rgb(11 22 38 / 0.05), 0 20px 44px -28px rgb(11 22 38 / 0.3);
+
+  /* Hero sky — dawn over the ivory horizon, banded from altitude to ground */
+  --sky-1: #b9cde9;
+  --sky-2: #dde3de;
+  --sky-3: #f4ead4;
+  --sky-4: #f7f5ec;
+  --sky-sun: rgb(212 175 55 / 0.4);
+  --sky-sun-core: rgb(255 244 214 / 0.9);
+  --sky-haze: rgb(255 255 255 / 0.75);
+  --sky-horizon: rgb(212 175 55 / 0.32);
+  --star-opacity: 0;
+
+  --shell: 1520px;
+  --gutter: clamp(20px, 4.5vw, 80px);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #070e18;
+    --bg-deep: #04090f;
+    --surface: rgb(248 246 237 / 0.04);
+    --surface-solid: #0d1624;
+    --fg: #f8f6ed;
+    --fg-muted: rgb(248 246 237 / 0.64);
+    --fg-subtle: rgb(248 246 237 / 0.42);
+    --line: rgb(248 246 237 / 0.1);
+    --line-strong: rgb(248 246 237 / 0.24);
+    --accent: #d4af37;
+    --accent-bright: #e6cc77;
+    --glow: rgb(212 175 55 / 0.45);
+    --card-shadow: none;
+
+    --sky-1: #02060d;
+    --sky-2: #050c17;
+    --sky-3: #0e2036;
+    --sky-4: #070e18;
+    --sky-sun: rgb(212 175 55 / 0.32);
+    --sky-sun-core: rgb(255 236 186 / 0.55);
+    --sky-haze: rgb(150 180 220 / 0.09);
+    --sky-horizon: rgb(230 204 119 / 0.38);
+    --star-opacity: 1;
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #070e18;
+  --bg-deep: #04090f;
+  --surface: rgb(248 246 237 / 0.04);
+  --surface-solid: #0d1624;
+  --fg: #f8f6ed;
+  --fg-muted: rgb(248 246 237 / 0.64);
+  --fg-subtle: rgb(248 246 237 / 0.42);
+  --line: rgb(248 246 237 / 0.1);
+  --line-strong: rgb(248 246 237 / 0.24);
+  --accent: #d4af37;
+  --accent-bright: #e6cc77;
+  --glow: rgb(212 175 55 / 0.45);
+  --card-shadow: none;
+
+  --sky-1: #02060d;
+  --sky-2: #050c17;
+  --sky-3: #0e2036;
+  --sky-4: #070e18;
+  --sky-sun: rgb(212 175 55 / 0.32);
+  --sky-sun-core: rgb(255 236 186 / 0.55);
+  --sky-haze: rgb(150 180 220 / 0.09);
+  --sky-horizon: rgb(230 204 119 / 0.38);
+  --star-opacity: 1;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-deep: var(--bg-deep);
+  --color-surface: var(--surface);
+  --color-surface-solid: var(--surface-solid);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+
+  --color-navy: var(--nisir-navy);
+  --color-navy-deep: var(--nisir-navy-deep);
+  --color-charcoal: var(--nisir-charcoal);
+  --color-gold: var(--nisir-gold);
+  --color-gold-light: var(--nisir-gold-light);
+  --color-ivory: var(--nisir-ivory);
+  --color-slate: var(--nisir-slate);
+
+  --font-sans: var(--font-mori), ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif;
+}
+
+/* ----------------------------------- base --------------------------------- */
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    font-variant-numeric: tabular-nums;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    /* `clip`, not `hidden`: `hidden` would make body a scroll container and
+       silently break every position:sticky column on the site. */
+    overflow-x: clip;
+  }
+
+  body[data-menu-open="true"] {
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: var(--nisir-gold);
+    color: var(--nisir-navy);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-bright);
+    outline-offset: 3px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  section {
+    scroll-margin-top: 88px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-deep);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+}
+
+/* -------------------------------- components ------------------------------ */
+
+@layer components {
+  .shell {
+    width: min(100%, var(--shell));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  /* Display type — tight, confident, optically balanced at every size. */
+  .display {
+    font-weight: 500;
+    line-height: 0.92;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .display-xl {
+    font-size: clamp(3.2rem, 8.4vw, 8.75rem);
+  }
+  .display-lg {
+    font-size: clamp(2.6rem, 5.6vw, 5.25rem);
+  }
+  .display-md {
+    font-size: clamp(2rem, 3.6vw, 3.25rem);
+    line-height: 0.98;
+  }
+
+  /* Micro-labels: the "instrument panel" voice of the brand. */
+  .label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .eyebrow::before {
+    content: "";
+    width: 2rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.65;
+  }
+
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 3.25rem;
+    padding-inline: 1.5rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    overflow: hidden;
+    isolation: isolate;
+    transition: color 0.4s var(--ease-out), border-color 0.4s var(--ease-out),
+      background-color 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+  }
+  /* Gold wipes upward from the base on hover. */
+  .btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(120deg, var(--nisir-gold), var(--nisir-gold-light));
+    transform: translateY(101%);
+    transition: transform 0.55s var(--ease-out);
+  }
+  .btn:hover::after,
+  .btn:focus-visible::after {
+    transform: translateY(0);
+  }
+  .btn:hover,
+  .btn:focus-visible {
+    color: var(--nisir-navy);
+    border-color: transparent;
+  }
+
+  .btn-solid {
+    background: linear-gradient(120deg, var(--nisir-gold), var(--nisir-gold-light));
+    border-color: transparent;
+    color: var(--nisir-navy);
+  }
+  .btn-solid::after {
+    background: var(--nisir-navy);
+    transform: translateY(101%);
+  }
+  .btn-solid:hover,
+  .btn-solid:focus-visible {
+    color: var(--nisir-ivory);
+  }
+
+  .btn-ondark {
+    border-color: rgb(248 246 237 / 0.28);
+    color: var(--nisir-ivory);
+  }
+
+  .card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 1.25rem;
+    background: var(--surface);
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(14px);
+    transition: border-color 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+  }
+  .card:hover {
+    border-color: color-mix(in srgb, var(--accent-bright) 45%, transparent);
+  }
+
+  .hairline {
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, var(--line-strong) 18%, var(--line-strong) 82%, transparent);
+  }
+
+  /* Gold sweep used on gallery tiles and feature cards. */
+  .sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.14) 48%, transparent 58%);
+    translate: -120% 0;
+    transition: translate 0.9s var(--ease-out);
+    pointer-events: none;
+  }
+  .sheen:hover::before {
+    translate: 120% 0;
+  }
+}
+
+/* --------------------------------- utilities ------------------------------ */
+
+@utility text-gradient-gold {
+  background: linear-gradient(100deg, var(--nisir-gold-light), var(--nisir-gold) 45%, #b8912c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Theme-swapped assets (the mark is gold on night, navy on daylight). */
+@utility only-dark {
+  display: none;
+}
+@utility only-light {
+  display: revert;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .only-dark {
+    display: revert;
+  }
+  :root:not([data-theme="light"]) .only-light {
+    display: none;
+  }
+}
+[data-theme="dark"] .only-dark {
+  display: revert;
+}
+[data-theme="dark"] .only-light {
+  display: none;
+}
+
+/* Film grain — a whisper of texture over the whole page. */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.32;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  animation: grain-shift 8s steps(6) infinite;
+}
+
+@keyframes grain-shift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3%, 2%);
+  }
+  40% {
+    transform: translate(2%, -3%);
+  }
+  60% {
+    transform: translate(-2%, -2%);
+  }
+  80% {
+    transform: translate(3%, 3%);
+  }
+}
+
+/* Slow drift for cloud banks and the soaring mark. */
+@keyframes soar {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -22px, 0) rotate(-1.2deg);
+  }
+}
+@keyframes drift {
+  from {
+    transform: translate3d(-8%, 0, 0);
+  }
+  to {
+    transform: translate3d(8%, 0, 0);
+  }
+}
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.animate-soar {
+  animation: soar 9s var(--ease-in-out) infinite;
+}
+.animate-drift {
+  animation: drift 34s var(--ease-in-out) infinite alternate;
+}
+.animate-marquee {
+  animation: marquee 42s linear infinite;
+}
+.animate-twinkle {
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
