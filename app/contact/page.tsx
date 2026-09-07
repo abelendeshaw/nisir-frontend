@@ -1,101 +1,115 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { capabilities, capabilityName } from "@/lib/capabilities";
-import { SkyScene } from "@/components/sky";
-import { MaskLines, Reveal } from "@/components/motion";
-import { InquiryForm } from "@/components/inquiry-form";
-import { SelectField } from "@/components/form-fields";
+import { InquiryForm } from "@/components/forms/inquiry";
+import { SelectField } from "@/components/forms/fields";
+import { Lines, Reveal } from "@/components/ui/reveal";
+import { services, serviceName } from "@/lib/services";
+import { locations, site, social } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Start a project with Nisir Designs. Send a general inquiry, or go straight to the capability you need — no account required.",
+    "Start a project with Nisir. Send a general inquiry, or go straight to the service you need — no account required.",
 };
-
-const details = [
-  { label: "Email", value: "hello@nisirdesigns.com", href: "mailto:hello@nisirdesigns.com" },
-  { label: "Digital + 3D studio", value: "Ontario, Canada" },
-  { label: "Fashion academy", value: "Addis Ababa, Ethiopia" },
-];
 
 export default function ContactPage() {
   return (
-    <main id="top">
-      <section className="relative isolate flex min-h-[62svh] flex-col justify-end overflow-hidden pb-14 pt-36">
-        <SkyScene compact eagle={false} />
+    <main id="main">
+      <section className="slab-ink relative overflow-hidden pb-14 pt-[calc(var(--header-h)+clamp(56px,12vh,140px))]">
+        <div className="grid-rails" aria-hidden />
         <div className="shell relative">
-          <Reveal immediate y={14}>
-            <p className="eyebrow">General inquiry</p>
+          <Reveal immediate y={10}>
+            <p className="marker tag-sm">
+              <span>Contact</span>
+              <span className="text-faint">General inquiry</span>
+            </p>
           </Reveal>
-          <MaskLines
+          <Lines
+            as="h1"
             immediate
-            className="display display-xl mt-7 max-w-[12ch]"
             delay={0.12}
-            lines={[<>Start with</>, <><span className="text-gradient-gold">the idea.</span></>]}
+            className="d1 mt-8 max-w-[11ch]"
+            lines={[<>Start with</>, <>the <span className="thin text-gold">idea</span>.</>]}
           />
         </div>
       </section>
 
-      <section className="py-20 md:py-28">
-        <div className="shell grid gap-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
-          <div className="lg:sticky lg:top-32 lg:self-start">
-            <Reveal y={14}>
-              <h2 className="display display-md max-w-[12ch]">
-                Tell us what you are <span className="text-gradient-gold">building.</span>
-              </h2>
-              <p className="mt-6 max-w-sm text-muted">
-                If you already know the capability you need, use its specific form — the questions
-                there are sharper. Otherwise send a general note and we will route it internally.
+      <section className="py-14 md:py-20">
+        <div className="shell grid gap-16 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-24">
+          {/* Where it lands */}
+          <div className="lg:sticky lg:top-[calc(var(--header-h)+2rem)] lg:self-start">
+            <Reveal>
+              <p className="lede max-w-sm">
+                If you already know the service you need, use its own form — the questions there
+                are sharper. Otherwise send a general note and we will route it internally.
               </p>
             </Reveal>
 
-            <Reveal delay={0.12} className="mt-12">
-              <dl className="grid gap-px">
-                {details.map((detail) => (
-                  <div key={detail.label} className="border-t border-line py-5">
-                    <dt className="label text-[10px] text-subtle">{detail.label}</dt>
-                    <dd className="mt-2 text-[15px]">
-                      {detail.href ? (
-                        <a
-                          href={detail.href}
-                          className="transition-colors duration-300 hover:text-accent"
-                        >
-                          {detail.value}
-                        </a>
-                      ) : (
-                        detail.value
-                      )}
+            <Reveal delay={0.1} className="mt-12">
+              <dl className="flex flex-col">
+                <div className="border-t border-line py-5">
+                  <dt className="tag-sm text-faint">Email</dt>
+                  <dd className="mt-2.5">
+                    <a
+                      href={`mailto:${site.email}`}
+                      className="ul text-[16px] transition-colors duration-300 hover:text-accent"
+                    >
+                      {site.email}
+                    </a>
+                  </dd>
+                </div>
+                {locations.map((place) => (
+                  <div key={place.id} className="border-t border-line py-5">
+                    <dt className="tag-sm text-faint">{place.role}</dt>
+                    <dd className="mt-2.5 text-[16px]">
+                      {place.city}, {place.country}
                     </dd>
                   </div>
                 ))}
+                <div className="border-y border-line py-5">
+                  <dt className="tag-sm text-faint">Elsewhere</dt>
+                  <dd className="mt-3 flex flex-wrap gap-5">
+                    {social.map((item) => (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ul text-[15px] text-muted transition-colors hover:text-fg"
+                      >
+                        {item.label}
+                      </a>
+                    ))}
+                  </dd>
+                </div>
               </dl>
             </Reveal>
 
-            <Reveal delay={0.18} className="mt-12">
-              <p className="label mb-4 text-[10px] text-subtle">Go direct</p>
+            <Reveal delay={0.16} className="mt-12">
+              <p className="tag-sm mb-4 text-faint">Go direct</p>
               <div className="flex flex-wrap gap-2">
-                {capabilities.map((capability) => (
+                {services.map((service) => (
                   <Link
-                    key={capability.slug}
-                    href={`/capabilities/${capability.slug}#inquiry`}
-                    className="rounded-full border border-line px-3.5 py-2 text-[12px] text-muted transition-colors duration-300 hover:border-accent hover:text-fg"
+                    key={service.slug}
+                    href={`/services/${service.slug}#inquiry`}
+                    className="tag-sm rounded-full border border-line px-3.5 py-2.5 text-muted transition-colors duration-300 hover:border-accent hover:text-fg"
                   >
-                    {capabilityName(capability)}
+                    {serviceName(service)}
                   </Link>
                 ))}
               </div>
             </Reveal>
           </div>
 
-          <Reveal delay={0.1}>
+          <Reveal delay={0.08}>
             <InquiryForm
-              submitLabel="Send inquiry ↗"
-              note="No account required. This form is a prototype and does not send data yet."
+              submitLabel="Send inquiry"
+              note="No account required. This form is a prototype and does not transmit yet."
             >
               <SelectField
-                name="capability"
-                label="Capability"
-                options={["Not sure yet", ...capabilities.map((item) => capabilityName(item))]}
+                name="service"
+                label="Service"
+                options={["Not sure yet", ...services.map((item) => serviceName(item))]}
                 className="sm:col-span-2"
               />
             </InquiryForm>

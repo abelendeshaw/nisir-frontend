@@ -1,127 +1,141 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { EagleMark } from "@/components/brand";
-import { SkyScene } from "@/components/sky";
-import { MaskLines, Reveal, RevealGroup } from "@/components/motion";
-import { SpotlightCard } from "@/components/spotlight-card";
+import { Cta } from "@/components/sections/cta";
+import { Plate } from "@/components/ui/plate";
+import { Tilt } from "@/components/ui/surfaces";
+import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
+import { ArrowLink } from "@/components/ui/links";
+import type { PlateKind } from "@/lib/services";
 
 export const metadata: Metadata = {
-  title: "3D Store",
+  title: "Store",
   description:
-    "A concept storefront for Nisir Designs — physical 3D-printed products and downloadable digital models.",
+    "A concept storefront for Nisir — 3D-printed physical objects and downloadable digital models. Commerce is parked until the product build.",
 };
 
 /**
- * The storefront is deliberately parked: the commerce model (accounts,
- * checkout, payment, digital fulfilment, verified reviews) is still upstream
- * work. This page only carries the concept forward in the new visual system.
+ * The storefront is deliberately parked. Accounts, checkout, payment, digital
+ * fulfilment and verified reviews are upstream product work; this page carries
+ * the concept forward in the new system without pretending to transact.
  */
-const products = ["Physical product", "Digital model", "Seasonal object", "Prototype series"];
+const objects: { name: string; kind: PlateKind; type: string }[] = [
+  { name: "Physical object", kind: "orbit", type: "Printed · Ontario" },
+  { name: "Digital model", kind: "lattice", type: "Download · STL / STEP" },
+  { name: "Seasonal edition", kind: "solid", type: "Limited run" },
+  { name: "Prototype series", kind: "stack", type: "Small batch" },
+];
 
 const pending = [
   "Account-gated checkout",
-  "Stripe payment",
+  "Payment processing",
   "Digital asset fulfilment",
   "Verified reviews",
-  "Storefront assistant",
+  "Order tracking",
 ];
 
 export default function StorePage() {
   return (
-    <main id="top">
-      <section className="relative isolate flex min-h-[72svh] flex-col justify-end overflow-hidden pb-14 pt-36">
-        <SkyScene compact />
+    <main id="main">
+      <section className="slab-ink relative overflow-hidden pb-16 pt-[calc(var(--header-h)+clamp(56px,12vh,140px))]">
+        <div className="grid-rails" aria-hidden />
         <div className="shell relative">
-          <Reveal immediate y={14}>
-            <p className="eyebrow">3D storefront · Concept</p>
+          <Reveal immediate y={10}>
+            <p className="marker tag-sm">
+              <span>Store</span>
+              <span className="text-faint">Concept</span>
+            </p>
           </Reveal>
-          <MaskLines
+          <Lines
+            as="h1"
             immediate
-            className="display display-xl mt-7 max-w-[12ch]"
             delay={0.12}
-            lines={[<>Objects,</>, <><span className="text-gradient-gold">ready to exist.</span></>]}
+            className="d1 mt-8 max-w-[11ch]"
+            lines={[<>Objects,</>, <>ready to <span className="thin text-gold">exist</span>.</>]}
           />
-          <Reveal immediate delay={0.45} y={20} className="mt-9">
-            <p className="max-w-xl text-lg leading-relaxed text-muted">
-              A future storefront for physical 3D-printed products and downloadable digital
-              models. Checkout stays deliberately separate from guest service inquiries.
+          <Reveal immediate delay={0.5} className="mt-10">
+            <p className="lede max-w-xl">
+              A future storefront for 3D-printed physical goods and downloadable digital models.
+              Checkout stays deliberately separate from studio inquiries — buying an object and
+              commissioning one are not the same conversation.
             </p>
           </Reveal>
         </div>
       </section>
 
-      <section className="py-24 md:py-32">
+      <section className="py-16 md:py-24">
         <div className="shell">
-          <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div>
-              <Reveal y={14}>
-                <p className="eyebrow">Store architecture</p>
-              </Reveal>
-              <MaskLines
-                as="h2"
-                className="display display-lg mt-6 max-w-[16ch]"
-                lines={[<>Designed as commerce,</>, <>not a <span className="text-gradient-gold">capability page.</span></>]}
-              />
-            </div>
-            <Reveal delay={0.15} className="max-w-sm lg:pb-3">
-              <p className="text-muted">
-                The transactional layer is parked until the product build. What is here keeps the
-                store visually connected to the rest of the brand.
-              </p>
-            </Reveal>
-          </div>
-
-          <RevealGroup className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
-            {products.map((product, index) => (
-              <SpotlightCard key={product} className="card sheen group/tile rounded-2xl">
-                <div className="relative z-10 flex min-h-[280px] flex-col justify-between p-6">
-                  <span className="label text-[10px] text-subtle">
-                    Slot {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="display text-2xl transition-transform duration-700 group-hover/tile:-translate-y-1">
-                    {product}
-                  </span>
-                </div>
-                <EagleMark className="pointer-events-none absolute -bottom-6 -right-6 w-28 opacity-[0.05]" />
-              </SpotlightCard>
+          <Stagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
+            {objects.map((object, i) => (
+              <StaggerItem key={object.name}>
+                <Tilt max={7}>
+                  <article className="card group/obj h-full">
+                    <Plate kind={object.kind} className="aspect-4/5 border-0 border-b" />
+                    <div className="flex items-baseline justify-between gap-4 p-6">
+                      <div>
+                        <p className="text-[15px] text-fg">{object.name}</p>
+                        <p className="mt-1.5 text-[13px] text-muted">{object.type}</p>
+                      </div>
+                      <span className="tag-sm text-faint">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-line px-6 py-4">
+                      <span className="tag-sm text-faint">Not yet listed</span>
+                      <span className="tag-sm text-accent opacity-0 transition-opacity duration-500 group-hover/obj:opacity-100">
+                        Soon
+                      </span>
+                    </div>
+                  </article>
+                </Tilt>
+              </StaggerItem>
             ))}
-          </RevealGroup>
-
-          <Reveal delay={0.1} className="mt-16">
-            <div className="hairline" />
-            <div className="grid gap-8 pt-10 md:grid-cols-[auto_1fr] md:gap-16">
-              <p className="label text-[10px] text-subtle">Still to build</p>
-              <ul className="flex flex-wrap gap-2">
-                {pending.map((item) => (
-                  <li
-                    key={item}
-                    className="rounded-full border border-dashed border-line-strong px-3.5 py-2 text-[12px] text-subtle"
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
-
-          <Reveal delay={0.15} className="mt-16">
-            <Link
-              href="/capabilities/3d-printing"
-              className="group flex flex-col gap-6 border-t border-line pt-10 transition-colors duration-500 hover:border-accent sm:flex-row sm:items-end sm:justify-between"
-            >
-              <div>
-                <span className="label text-[10px] text-subtle">Need something made · 06</span>
-                <p className="display display-md mt-4 transition-transform duration-700 group-hover:translate-x-2">
-                  Custom 3D Printing
-                </p>
-              </div>
-              <span className="text-4xl text-accent transition-transform duration-700 group-hover:-translate-y-1 group-hover:translate-x-1">
-                ↗
-              </span>
-            </Link>
-          </Reveal>
+          </Stagger>
         </div>
       </section>
+
+      <section className="slab-ink py-20 md:py-28">
+        <div className="shell grid gap-14 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-24">
+          <Reveal>
+            <p className="marker tag-sm">
+              <span>Honest status</span>
+            </p>
+            <p className="d3 mt-6 max-w-[13ch]">
+              Commerce, not a <span className="thin text-gold">page</span>.
+            </p>
+          </Reveal>
+
+          <div>
+            <Reveal delay={0.1}>
+              <p className="lede max-w-xl">
+                The transactional layer is parked until the product build. Everything below is
+                still to come — listed here rather than implied by a disabled button.
+              </p>
+            </Reveal>
+
+            <Stagger className="mt-10 flex flex-wrap gap-2" stagger={0.05}>
+              {pending.map((item) => (
+                <StaggerItem key={item}>
+                  <span className="tag-sm inline-flex rounded-full border border-dashed border-line-strong px-4 py-2.5 text-muted">
+                    {item}
+                  </span>
+                </StaggerItem>
+              ))}
+            </Stagger>
+
+            <Reveal delay={0.15} className="mt-14">
+              <ArrowLink href="/services/3d-printing" className="tag">
+                Need something made now — Custom 3D Printing
+              </ArrowLink>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      <Cta
+        eyebrow="Commission instead"
+        lines={[<>Have it</>, <>made to <span className="thin text-gold">order</span>.</>]}
+        href="/services/3d-printing"
+        action="Brief a print run"
+      />
     </main>
   );
 }
