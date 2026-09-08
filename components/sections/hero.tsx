@@ -4,19 +4,20 @@ import { useRef } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "motion/react";
 import { Mark } from "@/components/chrome/mark";
+import { MarkOrigin, markSlotClass, useMarkTravel } from "@/components/chrome/mark-travel";
 import { Marquee } from "@/components/ui/marquee";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { Magnetic } from "@/components/ui/magnetic";
 import { services, serviceName } from "@/lib/services";
+import { cn } from "@/lib/utils";
 
 /**
  * The first screen is a single ink slab with three lines of display type
  * running to the page margin.
  *
  * On scroll the lines shear past each other — the top line drags right, the
- * middle drags left, the bottom right again. It is one transform per line, but
- * it turns a static headline into something that is clearly reacting to you,
- * which is the whole point of the entrance.
+ * middle drags left, the bottom right again. The eagle leaves its crop and
+ * halves onto the practice rule; the type keeps moving while the mark travels.
  */
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
@@ -26,23 +27,21 @@ export function Hero() {
   const l2 = useTransform(scrollYProgress, [0, 1], ["0%", "-22%"]);
   const l3 = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
   const fade = useTransform(scrollYProgress, [0.35, 1], [1, 0]);
-  const markX = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
+  const travel = useMarkTravel();
 
   return (
     <section
-      ref={ref}
-      className="slab-ink relative isolate flex min-h-[100svh] flex-col justify-between overflow-hidden"
+      ref={(node) => {
+        ref.current = node;
+        if (travel) travel.heroRef.current = node;
+      }}
+      className="slab-ink relative flex min-h-[100svh] flex-col justify-between overflow-hidden"
     >
-      {/* The mark, oversized and cropped by the right edge. */}
-      <motion.div
-        aria-hidden
-        style={{ x: markX }}
-        className="pointer-events-none absolute -right-[22%] top-1/2 w-[110vw] -translate-y-1/2 md:-right-[10%] md:w-[70vw]"
-      >
-        <Mark className="w-full text-gold/[0.14]" />
-      </motion.div>
+      <MarkOrigin className={cn(markSlotClass("origin"), !travel?.ready && "text-gold/[0.14]")}>
+        {travel?.ready ? null : <Mark className="w-full" />}
+      </MarkOrigin>
 
-      <div className="bleed relative flex flex-1 flex-col justify-between pb-6 pt-[calc(var(--header-h)+clamp(20px,4vh,56px))]">
+      <div className="relative z-10 bleed flex flex-1 flex-col justify-between pb-6 pt-[calc(var(--header-h)+clamp(20px,4vh,56px))]">
         <Reveal immediate y={8}>
           <p className="marker tag-sm">
             <span>Multidisciplinary design practice</span>
@@ -86,7 +85,7 @@ export function Hero() {
       </div>
 
       {/* Gold rail: the practice, read out. */}
-      <div className="slab-gold relative flex items-center py-3">
+      <div className="slab-gold relative z-10 flex items-center py-3">
         <Marquee duration={38} fade={false}>
           {services.map((service) => (
             <span key={service.slug} className="flex items-center">

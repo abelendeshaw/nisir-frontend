@@ -1,3 +1,4 @@
+import { MarkTravel } from "@/components/chrome/mark-travel";
 import { Hero } from "@/components/sections/hero";
 import { Manifesto } from "@/components/sections/manifesto";
 import { Services } from "@/components/sections/services";
@@ -8,8 +9,10 @@ import { Cta } from "@/components/sections/cta";
 export default function HomePage() {
   return (
     <main id="main">
-      <Hero />
-      <Manifesto />
+      <MarkTravel>
+        <Hero />
+        <Manifesto />
+      </MarkTravel>
       <Services />
       <Process />
       <Footprint />
