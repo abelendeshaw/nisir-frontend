@@ -82,6 +82,14 @@ export function describeConfiguration(product: Product, config: Configuration) {
 
 export type CustomSpec = {
   fileName: string;
+  /**
+   * The model as nisir-backend stored and measured it, from
+   * `POST /custom/uploads`. Checkout sends this rather than the geometry —
+   * the price is rebuilt from the server's own reading of the file.
+   */
+  fileId: string;
+  material: MaterialId;
+  finish: FinishId;
   /** Millimetres, after the scale the visitor chose. */
   bboxMm: [number, number, number];
   volumeCm3: number;
@@ -133,34 +141,10 @@ export type Zone = {
   freeOver: number | null;
 };
 
-export const zones: Zone[] = [
-  {
-    id: "ca",
-    name: "Canada",
-    note: "Printed and shipped from Ontario",
-    tax: 0.13,
-    taxLabel: "HST (13%)",
-    freeOver: 25000,
-  },
-  {
-    id: "et",
-    name: "Ethiopia",
-    note: "Cleared through Addis Ababa",
-    tax: 0.15,
-    taxLabel: "VAT (15%)",
-    freeOver: 40000,
-  },
-  {
-    id: "intl",
-    name: "Rest of world",
-    note: "Duties and import fees are the buyer’s",
-    tax: 0,
-    taxLabel: "Tax",
-    freeOver: null,
-  },
-];
+/** Filled from `GET /catalog` — see the note at the top of `catalog.ts`. */
+export const zones: Zone[] = [];
 
-export const zoneById = new Map(zones.map((z) => [z.id, z]));
+export const zoneById = new Map<ZoneId, Zone>();
 
 export type ShippingId = "standard" | "express" | "pickup-on" | "pickup-et";
 
@@ -176,66 +160,11 @@ export type ShippingMethod = {
   pickup?: boolean;
 };
 
-export const shippingMethods: ShippingMethod[] = [
-  {
-    id: "standard",
-    name: "Standard",
-    note: "Tracked ground",
-    cents: 1800,
-    transit: [4, 8],
-    zones: ["ca"],
-  },
-  {
-    id: "express",
-    name: "Express",
-    note: "Tracked air, signature on delivery",
-    cents: 3400,
-    transit: [1, 3],
-    zones: ["ca"],
-  },
-  {
-    id: "pickup-on",
-    name: "Collect — Ontario",
-    note: "From the print floor, once you are emailed",
-    cents: 0,
-    transit: [0, 0],
-    zones: ["ca"],
-    pickup: true,
-  },
-  {
-    id: "standard",
-    name: "Standard",
-    note: "Tracked air freight",
-    cents: 4600,
-    transit: [9, 16],
-    zones: ["et"],
-  },
-  {
-    id: "pickup-et",
-    name: "Collect — Addis Ababa",
-    note: "From the Academy, Bole",
-    cents: 0,
-    transit: [0, 0],
-    zones: ["et"],
-    pickup: true,
-  },
-  {
-    id: "standard",
-    name: "Standard",
-    note: "Tracked air freight, duties unpaid",
-    cents: 6400,
-    transit: [10, 21],
-    zones: ["intl"],
-  },
-  {
-    id: "express",
-    name: "Express",
-    note: "Courier, duties unpaid",
-    cents: 11200,
-    transit: [3, 6],
-    zones: ["intl"],
-  },
-];
+/**
+ * One row per (method, zone) pair — `id` repeats across zones on purpose, so
+ * `findMethod` narrows by zone first. Filled from `GET /catalog`.
+ */
+export const shippingMethods: ShippingMethod[] = [];
 
 export function methodsForZone(zone: ZoneId) {
   return shippingMethods.filter((method) => method.zones.includes(zone));
@@ -249,13 +178,11 @@ export function findMethod(zone: ZoneId, id: ShippingId) {
 
 export type RushId = "standard" | "priority" | "overnight";
 
-export const rushTiers: { id: RushId; name: string; note: string; multiplier: number }[] = [
-  { id: "standard", name: "Standard queue", note: "Printed in turn", multiplier: 1 },
-  { id: "priority", name: "Priority", note: "Next machine free", multiplier: 1.35 },
-  { id: "overnight", name: "Overnight", note: "Off the queue entirely", multiplier: 1.8 },
-];
+export type RushTier = { id: RushId; name: string; note: string; multiplier: number };
 
-export const rushById = new Map(rushTiers.map((t) => [t.id, t]));
+export const rushTiers: RushTier[] = [];
+
+export const rushById = new Map<RushId, RushTier>();
 
 /* ---------------------------------------------------------------- promos -- */
 
@@ -268,18 +195,13 @@ export type Promo = {
   minimum?: number;
 };
 
-export const promos: Promo[] = [
-  { code: "MESKEL15", label: "Meskel — 15% off", kind: "percent", value: 0.15 },
-  { code: "ADEY10", label: "Adey Abeba — 10% off", kind: "percent", value: 0.1 },
-  {
-    code: "BUNA25",
-    label: "$25 off orders over $150",
-    kind: "amount",
-    value: 2500,
-    minimum: 15000,
-  },
-  { code: "FREESHIP", label: "Shipping on us", kind: "shipping", value: 0 },
-];
+/**
+ * Filled from `GET /catalog`, which only ever sends live codes. This copy is
+ * what makes the cart's feedback instant; nisir-backend re-resolves the code
+ * when the order is actually created, so a stale or edited one here cannot
+ * buy a discount.
+ */
+export const promos: Promo[] = [];
 
 export type PromoResult =
   | { ok: true; promo: Promo }

@@ -18,18 +18,13 @@ import {
   findMethod,
   methodsForZone,
   zones,
+  type CartLine,
   type ShippingId,
   type ZoneId,
 } from "@/lib/shop/pricing";
 import { authorise, emptyCard, validateCard, type CardDraft } from "@/lib/shop/payment";
-import {
-  newOrderId,
-  recordOrder,
-  useCart,
-  usePromoCode,
-  type Order,
-  type PaymentMethodId,
-} from "@/lib/shop/store";
+import { useCart, usePromoCode, type PaymentMethodId } from "@/lib/shop/store";
+import { submitOrder } from "@/app/actions/orders";
 import { cn } from "@/lib/utils";
 
 type StepId = "contact" | "delivery" | "payment" | "review";
@@ -51,8 +46,11 @@ const customLead: Record<string, [number, number]> = {
  * anywhere to send the thing. Digital-only carts drop the delivery step
  * entirely rather than showing an address form nobody needs to fill in.
  *
- * Nothing is submitted anywhere. `lib/shop/payment.ts` explains what is real
- * here and what is staged.
+ * The order itself is real: `submitOrder` sends the cart's *intent* — slugs,
+ * options, quantities — and nisir-backend prices it from the catalogue, so
+ * the total on the receipt is the server's figure rather than this page's.
+ * The card step is still the staged one; `lib/shop/payment.ts` explains what
+ * is real there and what is not.
  */
 export function CheckoutFlow() {
   const router = useRouter();
@@ -76,6 +74,7 @@ export function CheckoutFlow() {
   const [handset, setHandset] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const totals = calculateTotals(cart.lines, { zone, shipping, promo });
   const shippingMethod = findMethod(zone, shipping);
@@ -163,40 +162,42 @@ export function CheckoutFlow() {
     }
 
     setBusy(true);
-    const id = newOrderId();
-    const result = await authorise(method, card, id);
+    setSubmitError(null);
 
-    if (!result.ok) {
+    // The order is created first, and priced by the server. If the catalogue
+    // moved under this cart — a price edit, an expired code, the last one
+    // sold — this is where that surfaces, before any card is touched.
+    const placed = await submitOrder({
+      lines: cart.lines.map(toOrderLine),
+      contact,
+      address:
+        totals.digitalOnly || shippingMethod?.pickup
+          ? undefined
+          : { ...address, country: zones.find((entry) => entry.id === zone)?.name ?? "" },
+      zone,
+      shipping,
+      promoCode: promo?.code,
+      paymentMethod: method,
+    });
+
+    if (!placed.ok) {
       setBusy(false);
-      router.push(`/store/checkout/failed?code=${result.code}`);
+      setSubmitError(placed.message);
       return;
     }
 
-    const order: Order = {
-      id,
-      placedAt: new Date().toISOString(),
-      lines: cart.lines,
-      totals,
-      contact,
-      address: totals.digitalOnly || shippingMethod?.pickup
-        ? null
-        : { ...address, country: zones.find((entry) => entry.id === zone)?.name ?? "" },
-      zone,
-      shipping,
-      shippingLabel: shippingMethod ? `${shippingMethod.name} — ${shippingMethod.note}` : "",
-      payment: {
-        method,
-        label: method === "card" ? "Card" : method === "transfer" ? "Bank transfer" : method,
-        detail: result.detail,
-      },
-      promoCode: promo?.code ?? null,
-      eta: totals.digitalOnly ? [0, 0] : eta,
-    };
+    const result = await authorise(method, card, placed.order.id);
+    if (!result.ok) {
+      setBusy(false);
+      // The order stays on file as unpaid rather than vanishing, which is what
+      // lets the shopper retry against the same order number.
+      router.push(`/store/checkout/failed?code=${result.code}&order=${placed.order.id}`);
+      return;
+    }
 
-    recordOrder(order);
     cart.clear();
     setPromoCode("");
-    router.push(`/store/order/${id}`);
+    router.push(`/store/order/${placed.order.id}`);
   }
 
   return (
@@ -467,7 +468,7 @@ export function CheckoutFlow() {
                       disabled={busy}
                       className="btn btn-solid disabled:pointer-events-none disabled:opacity-70"
                     >
-                      {busy ? "Authorising…" : `Pay ${money(totals.totalCents)}`}
+                      {busy ? "Placing the order…" : `Pay ${money(totals.totalCents)}`}
                     </button>
                   </Magnetic>
                 ) : (
@@ -477,6 +478,17 @@ export function CheckoutFlow() {
                 )}
               </div>
             </div>
+
+            {/* The server refused the order — a sold-out object, a code that
+                expired between the cart and here. Say which. */}
+            {submitError && (
+              <p
+                role="alert"
+                className="mt-6 border-l-2 border-accent pl-4 text-[14px] leading-snug text-fg"
+              >
+                {submitError}
+              </p>
+            )}
           </div>
 
           <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)] lg:self-start">
@@ -536,6 +548,36 @@ function Recap({
       </div>
     </div>
   );
+}
+
+/**
+ * A cart line, reduced to what the server needs to price it for itself.
+ *
+ * The catalogue line id is `slug:material:finish:size` (see `lineId`), which
+ * is exactly the configuration — no separate bookkeeping required. Note that
+ * `unitCents` is deliberately not sent: the backend rejects unknown fields,
+ * and a cart that could name its own price would not be a cart.
+ */
+function toOrderLine(line: CartLine) {
+  if (line.kind === "custom" && line.custom) {
+    return {
+      kind: "custom" as const,
+      qty: line.qty,
+      fileId: line.custom.fileId,
+      material: line.custom.material,
+      finish: line.custom.finish,
+      custom: {
+        scale: line.custom.scale,
+        infill: line.custom.infill,
+        layerMm: line.custom.layerMm,
+        rush: line.custom.rush,
+        note: line.custom.note,
+      },
+    };
+  }
+
+  const [slug, material, finish, size] = line.id.split(":");
+  return { kind: "catalogue" as const, qty: line.qty, slug, material, finish, size };
 }
 
 /** Slowest thing in the cart, plus transit. */

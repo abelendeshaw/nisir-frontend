@@ -8,7 +8,7 @@ import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { ArrowLink } from "@/components/ui/links";
 import { Magnetic } from "@/components/ui/magnetic";
 import { Marquee } from "@/components/ui/marquee";
-import { collections, products } from "@/lib/shop/catalog";
+import { loadCatalog } from "@/lib/shop/catalog-server";
 import { money } from "@/lib/shop/format";
 import { fromPrice } from "@/lib/shop/pricing";
 
@@ -18,9 +18,10 @@ export const metadata: Metadata = {
     "Ethiopian form, printed in Ontario — rock-hewn crosses, Axum steles, jebena vessels and tibeb patterns, in stone composite, wood fibre and brass fill. Or upload your own model and price it live.",
 };
 
-const featured = products.filter((product) => product.featured).slice(0, 3);
+export default async function StorePage() {
+  const { products, collections } = await loadCatalog();
+  const featured = products.filter((product) => product.featured).slice(0, 3);
 
-export default function StorePage() {
   return (
     <main id="main">
       <section className="slab-ink relative overflow-hidden pb-20 pt-[calc(var(--header-h)+clamp(56px,12vh,140px))]">

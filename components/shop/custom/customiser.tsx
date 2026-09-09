@@ -11,6 +11,7 @@ import { rushTiers, type RushId } from "@/lib/shop/pricing";
 import { BUILD_VOLUME_MM, layerOptions, quote, SETUP_FEE_CENTS } from "@/lib/shop/quote";
 import { ACCEPTED, disposeModel, loadModelFile, MAX_BYTES, type LoadedModel } from "@/lib/shop/mesh";
 import { openCart, useCart } from "@/lib/shop/store";
+import { uploadCustomModel } from "@/app/actions/orders";
 import { cn } from "@/lib/utils";
 
 /**
@@ -24,7 +25,9 @@ import { cn } from "@/lib/utils";
  * the number by more than 40%.
  *
  * The model is parsed in the browser by three-stdlib's loaders and measured
- * locally. Nothing is uploaded to price it.
+ * locally — nothing is uploaded to *price* it, so the number keeps up with the
+ * sliders. The file is sent once, on "add to cart", where nisir-backend
+ * measures it again and that reading becomes the price the order is placed at.
  */
 
 const ModelViewer = dynamic(() => import("@/components/shop/custom/viewer"), {
@@ -35,7 +38,11 @@ const ModelViewer = dynamic(() => import("@/components/shop/custom/viewer"), {
 export function Customiser() {
   const cart = useCart();
   const [model, setModel] = useState<LoadedModel | null>(null);
+  // `loadModelFile` keeps only the parsed geometry, so the file itself is held
+  // here — it is what the print floor ultimately needs.
+  const [source, setSource] = useState<File | null>(null);
   const [reading, setReading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
 
@@ -69,10 +76,12 @@ export function Customiser() {
     try {
       const loaded = await loadModelFile(file);
       setModel(loaded);
+      setSource(file);
       setScale(100);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "That file could not be read.");
       setModel(null);
+      setSource(null);
     } finally {
       setReading(false);
     }
@@ -101,8 +110,24 @@ export function Customiser() {
   const perUnit = Math.round(q.totalCents / qty / 100) * 100;
   const runTotal = perUnit * qty;
 
-  function addToCart() {
-    if (!model) return;
+  async function addToCart() {
+    if (!model || !source) return;
+
+    // The one upload, at the one moment it is needed. Until this point the
+    // file has never left the tab.
+    setUploading(true);
+    setError(null);
+
+    const form = new FormData();
+    form.append("file", source, source.name);
+    const uploaded = await uploadCustomModel(form);
+
+    setUploading(false);
+    if (!uploaded.ok) {
+      setError(uploaded.message);
+      return;
+    }
+
     cart.add({
       id: `custom:${model.fileName}:${material}:${finish}:${scale}:${infill}:${layerMm}:${rush}`,
       kind: "custom",
@@ -123,6 +148,9 @@ export function Customiser() {
       ],
       custom: {
         fileName: model.fileName,
+        fileId: uploaded.fileId,
+        material,
+        finish,
         bboxMm: q.bboxMm,
         volumeCm3: q.volumeCm3,
         triangles: model.stats.triangles,
@@ -321,6 +349,7 @@ export function Customiser() {
           volumeCm3={q.volumeCm3}
           notes={q.notes}
           onAdd={addToCart}
+          uploading={uploading}
           added={added}
         />
       </div>
@@ -342,6 +371,7 @@ function QuotePanel({
   volumeCm3,
   notes,
   onAdd,
+  uploading,
   added,
 }: {
   rows: { label: string; detail: string; cents: number }[];
@@ -355,6 +385,7 @@ function QuotePanel({
   volumeCm3: number;
   notes: string[];
   onAdd: () => void;
+  uploading: boolean;
   added: boolean;
 }) {
   return (
@@ -413,8 +444,13 @@ function QuotePanel({
       <div className="mt-8 flex flex-wrap items-center gap-4 border-t-2 border-line pt-7">
         <Stepper value={qty} onChange={onQty} label="Quantity" max={250} />
         <Magnetic strength={0.2}>
-          <button type="button" onClick={onAdd} className="btn btn-solid">
-            {added ? "Added" : `Add — ${money(runTotal)}`}
+          <button
+            type="button"
+            onClick={onAdd}
+            disabled={uploading}
+            className="btn btn-solid disabled:opacity-60"
+          >
+            {uploading ? "Sending the model…" : added ? "Added" : `Add — ${money(runTotal)}`}
           </button>
         </Magnetic>
       </div>

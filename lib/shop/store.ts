@@ -1,17 +1,10 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import {
-  cartCount,
-  subtotal,
-  type CartLine,
-  type ShippingId,
-  type Totals,
-  type ZoneId,
-} from "./pricing";
+import { cartCount, subtotal, type CartLine } from "./pricing";
 
 /**
- * Cart, wishlist and orders — kept in module-level stores read through
+ * Cart and wishlist — kept in module-level stores read through
  * `useSyncExternalStore`, the same way `lib/hooks.ts` reads matchMedia.
  *
  * No provider, which matters: the header lives in the root layout and the
@@ -216,59 +209,19 @@ export function usePromoCode() {
 
 /* ---------------------------------------------------------------- orders -- */
 
+/**
+ * Orders used to live here, in localStorage, next to the cart. They now live
+ * in Postgres behind nisir-backend: checkout posts the cart's intent, the
+ * server prices it and returns the order, and the receipt and account pages
+ * read it back (`lib/shop/orders-server.ts`). A receipt therefore survives a
+ * cleared cache and follows the account to another device, which the old
+ * store could not do.
+ *
+ * The cart and wishlist stay here on purpose — both belong to the browser
+ * until someone decides to buy, and neither needs an account to work.
+ */
+
 export type PaymentMethodId = "card" | "telebirr" | "cbe" | "transfer";
-
-export type Order = {
-  id: string;
-  placedAt: string;
-  lines: CartLine[];
-  totals: Totals;
-  contact: { name: string; email: string; phone: string };
-  address: {
-    line1: string;
-    line2: string;
-    city: string;
-    region: string;
-    postal: string;
-    country: string;
-  } | null;
-  zone: ZoneId;
-  shipping: ShippingId;
-  shippingLabel: string;
-  payment: { method: PaymentMethodId; label: string; detail: string };
-  promoCode: string | null;
-  /** Business days from today, low and high. */
-  eta: [number, number];
-};
-
-const NO_ORDERS: Order[] = [];
-
-const ordersStore = createStore<Order[]>("nisir.orders.v1", NO_ORDERS, (raw) => {
-  if (!Array.isArray(raw)) return null;
-  const orders = raw.filter(
-    (order): order is Order => !!order && typeof order.id === "string" && Array.isArray(order.lines),
-  );
-  return orders.length ? orders : null;
-});
-
-export function useOrders() {
-  return useSyncExternalStore(ordersStore.subscribe, ordersStore.snapshot, ordersStore.server);
-}
-
-export function recordOrder(order: Order) {
-  // Newest first, and capped — this is a receipt drawer, not an archive.
-  ordersStore.update((current) => [order, ...current].slice(0, 20));
-}
-
-/** `NSR-4KX92B`. Unambiguous alphabet: no O/0, no I/1. */
-export function newOrderId() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let id = "";
-  for (let i = 0; i < 6; i += 1) {
-    id += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return `NSR-${id}`;
-}
 
 /**
  * Whether the client has taken over from the server snapshot.

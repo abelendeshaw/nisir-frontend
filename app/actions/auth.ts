@@ -34,7 +34,7 @@ export async function signup(_state: FormState, formData: FormData): Promise<For
 
   try {
     const user = await signupRemote({ name, email, password });
-    await createSession({ userId: user.id, email: user.email, name: user.name });
+    await createSession({ userId: user.id, email: user.email, name: user.name, token: user.token });
   } catch (cause) {
     return { message: cause instanceof AuthError ? cause.message : "Something went wrong." };
   }
@@ -53,7 +53,7 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
 
   try {
     const user = await loginRemote({ email, password });
-    await createSession({ userId: user.id, email: user.email, name: user.name });
+    await createSession({ userId: user.id, email: user.email, name: user.name, token: user.token });
   } catch (cause) {
     return { message: cause instanceof AuthError ? cause.message : "Something went wrong." };
   }

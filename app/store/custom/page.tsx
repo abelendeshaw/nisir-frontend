@@ -7,7 +7,7 @@ import { DimensionsField, FileField, NumberField, SelectField } from "@/componen
 import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { ArrowLink } from "@/components/ui/links";
 import { BUILD_VOLUME_MM } from "@/lib/shop/quote";
-import { materials } from "@/lib/shop/catalog";
+import { loadCatalog } from "@/lib/shop/catalog-server";
 
 export const metadata: Metadata = {
   title: "Custom printing",
@@ -30,7 +30,9 @@ const steps = [
   },
 ];
 
-export default function CustomPage() {
+export default async function CustomPage() {
+  const { materials } = await loadCatalog();
+
   return (
     <main id="main">
       <section className="slab-ink relative overflow-hidden pb-16 pt-[calc(var(--header-h)+clamp(48px,10vh,120px))]">

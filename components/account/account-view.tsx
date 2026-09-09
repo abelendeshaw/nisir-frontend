@@ -6,17 +6,21 @@ import { logout } from "@/app/actions/auth";
 import { Empty } from "@/components/shop/bits";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { money } from "@/lib/shop/format";
-import { useHydrated, useOrders } from "@/lib/shop/store";
+import type { OrderSummary } from "@/lib/shop/orders-server";
 
 /**
  * Name and email come from the signed session, read server-side and handed
  * down as a plain prop — this component never touches the cookie itself.
- * Orders still come from the browser's own local store (`lib/shop/store.ts`)
- * because nisir-backend does not keep them yet; see the note below the list.
+ * Orders are fetched server-side too, from nisir-backend, so they are the
+ * account's orders rather than this browser's.
  */
-export function AccountView({ user }: { user: { name: string; email: string } }) {
-  const orders = useOrders();
-  const hydrated = useHydrated();
+export function AccountView({
+  user,
+  orders,
+}: {
+  user: { name: string; email: string };
+  orders: OrderSummary[];
+}) {
 
   return (
     <main id="main">
@@ -63,12 +67,12 @@ export function AccountView({ user }: { user: { name: string; email: string } })
             </Link>
           </div>
 
-          {!hydrated ? null : orders.length === 0 ? (
+          {orders.length === 0 ? (
             <div className="mt-8">
               <Empty
                 eyebrow="Nothing yet"
-                title={<>No orders on this device.</>}
-                body="Once you place one, it shows up here."
+                title={<>No orders yet.</>}
+                body="Once you place one, it shows up here — on any device you sign in from."
               />
             </div>
           ) : (
@@ -99,9 +103,8 @@ export function AccountView({ user }: { user: { name: string; email: string } })
           )}
 
           <p className="mt-8 max-w-xl text-[12px] leading-relaxed text-faint">
-            Orders above are the ones placed on this device — the same record the receipt page
-            keeps. They are not yet attached to your account on our servers, so a different device
-            will not show them; that is next.
+            Every order placed while signed in, on any device. Orders placed as a guest are
+            reachable by their number instead.
           </p>
         </div>
       </section>

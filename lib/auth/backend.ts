@@ -8,18 +8,22 @@ import "server-only";
  * it, not against anything that exists yet (the backend, as of writing, has
  * a `users` reference slice with no password column and no `/auth` module):
  *
- *   POST /auth/signup  { email, name, password }  -> 201 { id, email, name }
+ *   POST /auth/signup  { email, name, password }  -> 201 { id, email, name, token }
  *                                                     409 if the email exists
- *   POST /auth/login   { email, password }        -> 200 { id, email, name }
+ *   POST /auth/login   { email, password }        -> 200 { id, email, name, token }
  *                                                     401 on bad credentials
  *
  * Passwords are hashed on that side; this file only ever forwards the
  * plaintext once, server to server, and never stores it.
+ *
+ * `token` is a backend-signed access token. It goes into the session cookie
+ * (see `session.ts`) and is replayed on the routes that need to know who is
+ * asking — `GET /orders`, and anything admin.
  */
 
 export class AuthError extends Error {}
 
-type BackendUser = { id: string; email: string; name: string };
+type BackendUser = { id: string; email: string; name: string; token: string };
 
 function apiUrl(path: string): string {
   const base = process.env.NISIR_API_URL;
@@ -53,10 +57,15 @@ async function call(path: string, body: unknown): Promise<BackendUser> {
   }
 
   const data = (await response.json()) as Partial<BackendUser>;
-  if (typeof data.id !== "string" || typeof data.email !== "string" || typeof data.name !== "string") {
+  if (
+    typeof data.id !== "string" ||
+    typeof data.email !== "string" ||
+    typeof data.name !== "string" ||
+    typeof data.token !== "string"
+  ) {
     throw new AuthError("The server sent back something unexpected.");
   }
-  return { id: data.id, email: data.email, name: data.name };
+  return { id: data.id, email: data.email, name: data.name, token: data.token };
 }
 
 export function signupRemote(fields: { email: string; name: string; password: string }) {

@@ -8,24 +8,17 @@ import { Empty, Stat } from "@/components/shop/bits";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { Mark } from "@/components/chrome/mark";
 import { money, moneyExact } from "@/lib/shop/format";
-import { useHydrated, useOrders, type Order } from "@/lib/shop/store";
+import type { PlacedOrder as Order } from "@/lib/shop/orders-server";
 import { site } from "@/lib/site";
 
 /**
  * The receipt.
  *
- * Orders are kept on the device that placed them — there is no account system
- * yet, and inventing one to render a confirmation would be dishonest about
- * what this is. A cleared browser loses the record, which the page says out
- * loud rather than leaving to be discovered.
+ * The order is fetched server-side and handed down whole, so this renders on
+ * the first pass with no hydration gap — and a receipt now survives a cleared
+ * browser, a second device, and the account it was placed under.
  */
-export function OrderView({ id }: { id: string }) {
-  const orders = useOrders();
-  const hydrated = useHydrated();
-  const order = orders.find((entry) => entry.id === id);
-
-  if (!hydrated) return <Settling />;
-
+export function OrderView({ id, order }: { id: string; order: Order | null }) {
   if (!order) {
     return (
       <main id="main" className="pt-[calc(var(--header-h)+clamp(56px,12vh,140px))]">
@@ -34,10 +27,10 @@ export function OrderView({ id }: { id: string }) {
             eyebrow={`Order ${id}`}
             title={
               <>
-                No record on this <span className="thin text-gold">device</span>.
+                No order under that <span className="thin text-gold">number</span>.
               </>
             }
-            body="Receipts are kept in this browser rather than in an account, so a different device — or cleared site data — will not find one. The confirmation email is the durable copy."
+            body="Check the number against your confirmation email — order numbers avoid O and I precisely because they get misread. If it was placed while signed in, it is listed under your account."
           />
         </div>
       </main>
@@ -160,8 +153,8 @@ export function OrderView({ id }: { id: string }) {
               </a>
             </div>
             <p className="mt-6 text-[12px] leading-snug text-faint">
-              This receipt is stored in this browser only. Keep the confirmation email — it is the
-              copy that survives a cleared cache.
+              Keep the order number — it reaches this receipt from any device. Orders placed while
+              signed in are also listed under your account.
             </p>
           </div>
         </div>
@@ -265,13 +258,6 @@ function Timeline({ digital }: { digital: boolean }) {
   );
 }
 
-function Settling() {
-  return (
-    <main id="main" className="grid min-h-[70svh] place-items-center">
-      <p className="tag-sm text-faint">Finding the order…</p>
-    </main>
-  );
-}
 
 /** Weekends do not print. */
 function businessDaysFrom(start: Date, days: number) {

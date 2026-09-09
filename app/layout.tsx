@@ -7,7 +7,9 @@ import { Cursor } from "@/components/chrome/cursor";
 import { Intro } from "@/components/chrome/intro";
 import { ScrollProgress } from "@/components/chrome/scroll-progress";
 import { CartDrawer } from "@/components/shop/cart-drawer";
+import { CatalogHydrator } from "@/components/shop/catalog-hydrator";
 import { getUser } from "@/lib/auth/dal";
+import { loadCatalog } from "@/lib/shop/catalog-server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -35,7 +37,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // A local cookie decrypt, not a network call — the session JWT already
   // carries the name, so this doesn't hold up the first paint the way a
   // database-backed session check would. See lib/auth/session.ts.
-  const user = await getUser();
+  // The catalogue is a cached fetch, deduped per request.
+  const [user, catalog] = await Promise.all([getUser(), loadCatalog()]);
 
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
@@ -46,14 +49,18 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <ScrollProgress />
-        <Cursor />
-        <Intro />
-        <Header user={user} />
-        {children}
-        <Footer />
-        {/* Outside the route tree: the drawer has to survive navigation. */}
-        <CartDrawer />
+        {/* Wraps rather than sits beside: nothing that prices something can
+            render before the catalogue tables are filled. */}
+        <CatalogHydrator data={catalog}>
+          <ScrollProgress />
+          <Cursor />
+          <Intro />
+          <Header user={user} />
+          {children}
+          <Footer />
+          {/* Outside the route tree: the drawer has to survive navigation. */}
+          <CartDrawer />
+        </CatalogHydrator>
       </body>
     </html>
   );

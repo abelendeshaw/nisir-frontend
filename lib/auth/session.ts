@@ -39,6 +39,14 @@ export type SessionUser = {
   userId: string;
   email: string;
   name: string;
+  /**
+   * The access token nisir-backend issued at login, carried inside this
+   * cookie rather than in one of its own. Server Actions replay it as
+   * `Authorization: Bearer` on the routes that need to know who is asking —
+   * "my orders", and anything admin. The browser never sees it: this cookie
+   * is httpOnly and only ever read on the server.
+   */
+  token: string;
 };
 
 export async function encrypt(user: SessionUser): Promise<string> {
@@ -54,10 +62,22 @@ export async function decrypt(token: string | undefined): Promise<SessionUser | 
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"] });
-    if (typeof payload.userId !== "string" || typeof payload.email !== "string" || typeof payload.name !== "string") {
+    if (
+      typeof payload.userId !== "string" ||
+      typeof payload.email !== "string" ||
+      typeof payload.name !== "string" ||
+      // A cookie from before the backend issued tokens can't authenticate a
+      // request, so it isn't a session any more. Signing in again fixes it.
+      typeof payload.token !== "string"
+    ) {
       return null;
     }
-    return { userId: payload.userId, email: payload.email, name: payload.name };
+    return {
+      userId: payload.userId,
+      email: payload.email,
+      name: payload.name,
+      token: payload.token,
+    };
   } catch {
     return null;
   }
