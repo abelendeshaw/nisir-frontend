@@ -81,7 +81,11 @@ export function CartView() {
                     <LineRow
                       key={line.id}
                       line={line}
-                      onQty={(qty) => cart.setQty(line.id, qty)}
+                      onQty={
+                        line.kind === "catalogue"
+                          ? (qty) => cart.setQty(line.id, qty)
+                          : undefined
+                      }
                       onRemove={() => cart.remove(line.id)}
                     />
                   ))}

@@ -101,7 +101,16 @@ export function LineRow({
               compact={compact}
             />
           ) : (
-            <span className="tag-sm text-faint">Qty {line.qty}</span>
+            <span className="tag-sm text-faint">
+              Qty {line.qty}
+              {/* A custom run was priced at this quantity — setup is amortised
+                  into the unit, so changing it here would quietly overcharge. */}
+              {line.kind === "custom" && variant !== "static" && (
+                <span className="ml-3 normal-case tracking-normal">
+                  fixed to the quote
+                </span>
+              )}
+            </span>
           )}
 
           <div className="flex items-center gap-4">

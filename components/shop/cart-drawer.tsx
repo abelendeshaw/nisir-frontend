@@ -95,7 +95,11 @@ export function CartDrawer() {
                         key={line.id}
                         line={line}
                         variant="compact"
-                        onQty={(qty) => cart.setQty(line.id, qty)}
+                        onQty={
+                          line.kind === "catalogue"
+                            ? (qty) => cart.setQty(line.id, qty)
+                            : undefined
+                        }
                         onRemove={() => cart.remove(line.id)}
                       />
                     ))}
