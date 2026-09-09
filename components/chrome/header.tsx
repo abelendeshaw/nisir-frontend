@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import { Mark } from "@/components/chrome/mark";
 import { Menu } from "@/components/chrome/menu";
+import { CartButton, WishlistLink } from "@/components/shop/cart-drawer";
 import { FlipLink } from "@/components/ui/links";
 import { Magnetic } from "@/components/ui/magnetic";
 import { nav } from "@/lib/site";
@@ -69,11 +70,18 @@ export function Header() {
             <Magnetic strength={0.2}>
               <Link
                 href="/contact"
-                className="tag hidden border-2 border-bone/35 px-5 py-3 transition-colors duration-500 hover:border-gold hover:text-gold lg:inline-flex"
+                className="tag hidden border-2 border-bone/35 px-5 py-3 transition-colors duration-500 hover:border-gold hover:text-gold xl:inline-flex"
               >
                 Start a project
               </Link>
             </Magnetic>
+
+            {/* The shop rail. Present on every page, because a cart the
+                visitor cannot see from the essay they wandered into is a cart
+                they forget they have. */}
+            <WishlistLink className="tag hidden transition-colors hover:text-gold lg:inline-flex" />
+            <CartButton className="tag flex items-center transition-colors hover:text-gold" />
+
             <button
               type="button"
               onClick={() => setOpen(true)}

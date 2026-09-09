@@ -1,138 +1,194 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Storefront } from "@/components/shop/storefront";
+import { Relic } from "@/components/shop/relic";
 import { Cta } from "@/components/sections/cta";
-import { Plate } from "@/components/ui/plate";
-import { Tilt } from "@/components/ui/surfaces";
 import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { ArrowLink } from "@/components/ui/links";
-import type { PlateKind } from "@/lib/services";
+import { Magnetic } from "@/components/ui/magnetic";
+import { Marquee } from "@/components/ui/marquee";
+import { collections, products } from "@/lib/shop/catalog";
+import { money } from "@/lib/shop/format";
+import { fromPrice } from "@/lib/shop/pricing";
 
 export const metadata: Metadata = {
-  title: "Store",
+  title: "Shop",
   description:
-    "A concept storefront for Nisir — 3D-printed physical objects and downloadable digital models. Commerce is parked until the product build.",
+    "Ethiopian form, printed in Ontario — rock-hewn crosses, Axum steles, jebena vessels and tibeb patterns, in stone composite, wood fibre and brass fill. Or upload your own model and price it live.",
 };
 
-/**
- * The storefront is deliberately parked. Accounts, checkout, payment, digital
- * fulfilment and verified reviews are upstream product work; this page carries
- * the concept forward in the new system without pretending to transact.
- */
-const objects: { name: string; kind: PlateKind; type: string }[] = [
-  { name: "Physical object", kind: "orbit", type: "Printed · Ontario" },
-  { name: "Digital model", kind: "lattice", type: "Download · STL / STEP" },
-  { name: "Seasonal edition", kind: "solid", type: "Limited run" },
-  { name: "Prototype series", kind: "stack", type: "Small batch" },
-];
-
-const pending = [
-  "Account-gated checkout",
-  "Payment processing",
-  "Digital asset fulfilment",
-  "Verified reviews",
-  "Order tracking",
-];
+const featured = products.filter((product) => product.featured).slice(0, 3);
 
 export default function StorePage() {
   return (
     <main id="main">
-      <section className="slab-ink relative overflow-hidden pb-16 pt-[calc(var(--header-h)+clamp(56px,12vh,140px))]">
+      <section className="slab-ink relative overflow-hidden pb-20 pt-[calc(var(--header-h)+clamp(56px,12vh,140px))]">
         <div className="grid-rails" aria-hidden />
         <div className="shell relative">
           <Reveal immediate y={10}>
             <p className="marker tag-sm">
-              <span>Store</span>
-              <span className="text-faint">Concept</span>
+              <span>Shop</span>
+              <span className="text-faint">{products.length} objects</span>
             </p>
           </Reveal>
+
           <Lines
             as="h1"
             immediate
             delay={0.12}
-            className="d1 mt-8 max-w-[11ch]"
-            lines={[<>Objects,</>, <>ready to <span className="thin text-gold">exist</span>.</>]}
+            className="d0 mt-8"
+            lines={[<>Ethiopia,</>, <>in <span className="thin text-gold">matter</span>.</>]}
           />
-          <Reveal immediate delay={0.5} className="mt-10">
-            <p className="lede max-w-xl">
-              A future storefront for 3D-printed physical goods and downloadable digital models.
-              Checkout stays deliberately separate from studio inquiries — buying an object and
-              commissioning one are not the same conversation.
-            </p>
-          </Reveal>
+
+          <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,32rem)_minmax(0,1fr)] lg:items-end">
+            <Reveal immediate delay={0.5}>
+              <p className="lede">
+                Rock-hewn churches, Axum steles, coffee vessels and woven borders — reduced to
+                geometry, printed in Ontario in stone composite, wood fibre and brass fill. Every
+                object refers to something that already exists.
+              </p>
+            </Reveal>
+            <Reveal immediate delay={0.62} className="flex flex-wrap items-center gap-5 lg:justify-end">
+              <Magnetic strength={0.25}>
+                <Link href="#objects" className="btn btn-solid">
+                  Browse the objects
+                </Link>
+              </Magnetic>
+              <ArrowLink href="/store/custom" className="tag">
+                Or print your own
+              </ArrowLink>
+            </Reveal>
+          </div>
         </div>
+
+        {/* The collections, running edge to edge. */}
+        <Reveal immediate delay={0.8} className="mt-16 border-y-2 border-line py-5">
+          <Marquee duration={40} pauseOnHover>
+            {collections.map((collection) => (
+              <span key={collection} className="flex items-center gap-8 px-8">
+                <span className="d4 text-fg/70">{collection}</span>
+                <span className="size-1.5 rounded-full bg-gold" aria-hidden />
+              </span>
+            ))}
+          </Marquee>
+        </Reveal>
       </section>
 
-      <section className="py-16 md:py-24">
+      {/* Three objects at scale, before the grid reduces them all to cards. */}
+      <section className="py-20 md:py-28">
         <div className="shell">
-          <Stagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
-            {objects.map((object, i) => (
-              <StaggerItem key={object.name}>
-                <Tilt max={7}>
-                  <article className="card group/obj h-full">
-                    <Plate kind={object.kind} className="aspect-4/5 border-0 border-b" />
-                    <div className="flex items-baseline justify-between gap-4 p-6">
-                      <div>
-                        <p className="text-[15px] text-fg">{object.name}</p>
-                        <p className="mt-1.5 text-[13px] text-muted">{object.type}</p>
-                      </div>
-                      <span className="tag-sm text-faint">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
+          <div className="flex items-end justify-between gap-8 border-b-2 border-line pb-6">
+            <p className="d3 max-w-[14ch]">
+              Start <span className="thin text-gold">here</span>.
+            </p>
+            <Link href="#objects" className="tag-sm ul text-muted hover:text-accent">
+              All {products.length}
+            </Link>
+          </div>
+
+          <Stagger className="mt-10 grid gap-8 md:grid-cols-3" stagger={0.1}>
+            {featured.map((product, i) => (
+              <StaggerItem key={product.slug}>
+                <Link href={`/store/${product.slug}`} className="group block">
+                  <Relic
+                    kind={product.relic}
+                    variant={i * 3 + 1}
+                    className="aspect-4/5"
+                    label={product.collection}
+                    index={product.number}
+                  />
+                  <div className="mt-6 flex items-baseline justify-between gap-5 border-t-2 border-line pt-5">
+                    <div className="min-w-0">
+                      <h2 className="d4 text-fg transition-colors duration-500 group-hover:text-accent">
+                        {product.name}
+                      </h2>
+                      <p className="mt-3 text-[14px] leading-snug text-muted">{product.line}</p>
                     </div>
-                    <div className="flex items-center justify-between border-t border-line px-6 py-4">
-                      <span className="tag-sm text-faint">Not yet listed</span>
-                      <span className="tag-sm text-accent opacity-0 transition-opacity duration-500 group-hover/obj:opacity-100">
-                        Soon
-                      </span>
-                    </div>
-                  </article>
-                </Tilt>
+                    <p className="shrink-0 text-[15px] tabular-nums text-fg">
+                      {money(fromPrice(product))}
+                    </p>
+                  </div>
+                </Link>
               </StaggerItem>
             ))}
           </Stagger>
         </div>
       </section>
 
-      <section className="slab-ink py-20 md:py-28">
-        <div className="shell grid gap-14 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-24">
-          <Reveal>
-            <p className="marker tag-sm">
-              <span>Honest status</span>
-            </p>
-            <p className="d3 mt-6 max-w-[13ch]">
-              Commerce, not a <span className="thin text-gold">page</span>.
-            </p>
-          </Reveal>
+      <Storefront />
 
+      {/* The custom lane. */}
+      <section className="slab-gold py-20 md:py-28">
+        <div className="shell grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-center lg:gap-24">
           <div>
-            <Reveal delay={0.1}>
-              <p className="lede max-w-xl">
-                The transactional layer is parked until the product build. Everything below is
-                still to come — listed here rather than implied by a disabled button.
+            <Reveal>
+              <p className="marker tag-sm">
+                <span>Custom</span>
               </p>
             </Reveal>
-
-            <Stagger className="mt-10 flex flex-wrap gap-2" stagger={0.05}>
-              {pending.map((item) => (
-                <StaggerItem key={item}>
-                  <span className="tag-sm inline-flex rounded-full border border-dashed border-line-strong px-4 py-2.5 text-muted">
-                    {item}
-                  </span>
-                </StaggerItem>
-              ))}
-            </Stagger>
-
-            <Reveal delay={0.15} className="mt-14">
-              <ArrowLink href="/services/3d-printing" className="tag">
-                Need something made now — Custom 3D Printing
+            <Lines
+              as="h2"
+              className="d2 mt-7 max-w-[15ch]"
+              lines={[<>Bring your own</>, <><span className="thin">geometry</span>.</>]}
+            />
+            <Reveal delay={0.2}>
+              <p className="lede mt-9 max-w-xl">
+                Upload an STL, OBJ, 3MF or PLY and see it on the bed at real scale. Material,
+                infill, layer height, finish and queue position all move the price while you drag —
+                because they all move what the machine is actually asked to do.
+              </p>
+            </Reveal>
+            <Reveal delay={0.3} className="mt-11 flex flex-wrap items-center gap-5">
+              <Magnetic strength={0.25}>
+                <Link href="/store/custom" className="btn btn-solid">
+                  Open the customiser
+                </Link>
+              </Magnetic>
+              <ArrowLink href="/services/3d-modelling" className="tag">
+                No model yet — have one made
               </ArrowLink>
             </Reveal>
           </div>
+
+          <Reveal delay={0.15}>
+            <Relic kind="mesh" className="aspect-4/5" label="Your model" index="∞" />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* What is true about buying here. */}
+      <section className="py-20 md:py-28">
+        <div className="shell">
+          <Stagger className="grid gap-px border-t-2 border-line md:grid-cols-3" stagger={0.08}>
+            {[
+              {
+                title: "Printed to order",
+                body: "Nothing sits in a warehouse. Every object starts when you confirm, which is why lead times are stated in days rather than promised as tomorrow.",
+              },
+              {
+                title: "Two studios",
+                body: "Production and shipping run from Ontario; the forms, the research and the Academy are in Addis Ababa. Collection is possible at either.",
+              },
+              {
+                title: "Repairable",
+                body: "Send a broken piece back and we reprint the part, not the object. The models are ours and they do not go out of print.",
+              },
+            ].map((row, i) => (
+              <StaggerItem key={row.title}>
+                <div className="flex h-full flex-col gap-5 border-b-2 border-line py-8 md:border-b-0 md:pr-10">
+                  <span className="tag-sm text-accent">{String(i + 1).padStart(2, "0")}</span>
+                  <h3 className="d4 text-fg">{row.title}</h3>
+                  <p className="lede">{row.body}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </Stagger>
         </div>
       </section>
 
       <Cta
-        eyebrow="Commission instead"
-        lines={[<>Have it</>, <>made to <span className="thin text-gold">order</span>.</>]}
+        eyebrow="Something larger"
+        lines={[<>A run, not</>, <>a <span className="thin text-gold">single</span>.</>]}
         href="/services/3d-printing"
         action="Brief a print run"
       />

@@ -8,6 +8,13 @@ import { Scramble } from "@/components/ui/links";
 import { services, serviceName } from "@/lib/services";
 import { locations, nav, site, social } from "@/lib/site";
 
+const shopLinks = [
+  { href: "/store", label: "All objects" },
+  { href: "/store/custom", label: "Custom printing" },
+  { href: "/store/wishlist", label: "Saved" },
+  { href: "/store/cart", label: "Cart" },
+] as const;
+
 /**
  * The colophon. Always ink, in both themes — it reads as the plate the whole
  * site is printed on, and gives the page a floor to land on.
@@ -78,6 +85,20 @@ export function Footer() {
                   >
                     {item.label}
                   </a>
+                </li>
+              ))}
+            </ul>
+
+            <p className="tag-sm mb-5 mt-10 text-bone/40">Shop</p>
+            <ul className="flex flex-col gap-2.5">
+              {shopLinks.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="ul text-[15px] text-bone/70 transition-colors duration-300 hover:text-gold"
+                  >
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>

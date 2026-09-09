@@ -6,6 +6,7 @@ import { Footer } from "@/components/chrome/footer";
 import { Cursor } from "@/components/chrome/cursor";
 import { Intro } from "@/components/chrome/intro";
 import { ScrollProgress } from "@/components/chrome/scroll-progress";
+import { CartDrawer } from "@/components/shop/cart-drawer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -45,6 +46,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Header />
         {children}
         <Footer />
+        {/* Outside the route tree: the drawer has to survive navigation. */}
+        <CartDrawer />
       </body>
     </html>
   );
