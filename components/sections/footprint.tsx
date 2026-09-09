@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import { Beam, BeamNode } from "@/components/ui/beam";
 import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { Ticker } from "@/components/ui/ticker";
@@ -29,7 +29,12 @@ export function Footprint() {
             <Lines
               as="h2"
               className="d2 mt-8 max-w-[14ch]"
-              lines={[<>Two grounds,</>, <>one <span className="thin text-gold">practice</span>.</>]}
+              lines={[
+                <Fragment key="a">Two grounds,</Fragment>,
+                <Fragment key="b">
+                  one <span className="thin text-gold">practice</span>.
+                </Fragment>,
+              ]}
             />
           </div>
           <Reveal delay={0.15}>

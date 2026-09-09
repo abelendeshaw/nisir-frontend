@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  * to a bordered rail once the page moves, and retreating entirely while the
  * visitor is reading downward.
  */
-export function Header() {
+export function Header({ user }: { user: { name: string } | null }) {
   const { scrollY } = useScroll();
   const pathname = usePathname();
   const [condensed, setCondensed] = useState(false);
@@ -81,6 +81,12 @@ export function Header() {
                 they forget they have. */}
             <WishlistLink className="tag hidden transition-colors hover:text-gold lg:inline-flex" />
             <CartButton className="tag flex items-center transition-colors hover:text-gold" />
+            <Link
+              href={user ? "/account" : "/account/login"}
+              className="tag hidden transition-colors hover:text-gold sm:inline-flex"
+            >
+              {user ? user.name.split(" ")[0] : "Sign in"}
+            </Link>
 
             <button
               type="button"

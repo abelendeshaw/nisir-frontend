@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -216,7 +216,11 @@ export function CheckoutFlow() {
             immediate
             delay={0.1}
             className="d2 mt-7"
-            lines={[<>Confirm and <span className="thin text-gold">print</span>.</>]}
+            lines={[
+              <Fragment key="a">
+                Confirm and <span className="thin text-gold">print</span>.
+              </Fragment>,
+            ]}
           />
         </div>
       </section>

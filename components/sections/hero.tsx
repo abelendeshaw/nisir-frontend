@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "motion/react";
 import { Mark } from "@/components/chrome/mark";
@@ -52,13 +52,13 @@ export function Hero() {
         {/* Three lines, three speeds. */}
         <motion.h1 style={{ opacity: fade }} className="d0 my-auto py-[2vh]">
           <motion.span style={{ x: l1 }} className="block">
-            <Lines immediate delay={0.1} lines={[<>A brighter</>]} />
+            <Lines immediate delay={0.1} lines={[<Fragment key="a">A brighter</Fragment>]} />
           </motion.span>
           <motion.span style={{ x: l2 }} className="block text-gold">
-            <Lines immediate delay={0.18} lines={[<>Tomorrow,</>]} />
+            <Lines immediate delay={0.18} lines={[<Fragment key="a">Tomorrow,</Fragment>]} />
           </motion.span>
           <motion.span style={{ x: l3 }} className="block">
-            <Lines immediate delay={0.26} lines={[<>By design.</>]} />
+            <Lines immediate delay={0.26} lines={[<Fragment key="a">By design.</Fragment>]} />
           </motion.span>
         </motion.h1>
 

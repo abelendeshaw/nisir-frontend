@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import { Cta } from "@/components/sections/cta";
 import { Mark } from "@/components/chrome/mark";
@@ -56,7 +57,12 @@ export default function StudioPage() {
             immediate
             delay={0.12}
             className="d1 mt-8 max-w-[12ch]"
-            lines={[<>Built between</>, <>systems &amp; <span className="thin text-gold">craft</span>.</>]}
+            lines={[
+              <Fragment key="a">Built between</Fragment>,
+              <Fragment key="b">
+                systems &amp; <span className="thin text-gold">craft</span>.
+              </Fragment>,
+            ]}
           />
           <Reveal immediate delay={0.5} className="mt-10">
             <p className="lede max-w-xl">
@@ -109,7 +115,12 @@ export default function StudioPage() {
               <Lines
                 as="h2"
                 className="d2 mt-8 max-w-[14ch]"
-                lines={[<>What should</>, <>remain <span className="thin text-gold">true</span>.</>]}
+                lines={[
+                  <Fragment key="a">What should</Fragment>,
+                  <Fragment key="b">
+                    remain <span className="thin text-gold">true</span>.
+                  </Fragment>,
+                ]}
               />
             </div>
             <Reveal delay={0.15}>
@@ -202,7 +213,12 @@ export default function StudioPage() {
 
       <Cta
         eyebrow="Working together"
-        lines={[<>Ideas meet</>, <><span className="thin text-gold">engineering</span>.</>]}
+        lines={[
+          <Fragment key="a">Ideas meet</Fragment>,
+          <Fragment key="b">
+            <span className="thin text-gold">engineering</span>.
+          </Fragment>,
+        ]}
       />
     </main>
   );

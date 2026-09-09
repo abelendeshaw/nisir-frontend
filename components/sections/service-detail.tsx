@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { Plate } from "@/components/ui/plate";
 import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
@@ -53,7 +54,7 @@ export function ServiceDetail({
               delay={0.12}
               className="d1 mt-8 max-w-[11ch]"
               lines={[
-                <>{service.titleTop}</>,
+                <Fragment key="a">{service.titleTop}</Fragment>,
                 <span className="text-gold" key="b">
                   {service.titleBottom}
                 </span>,

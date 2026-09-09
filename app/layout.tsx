@@ -7,6 +7,7 @@ import { Cursor } from "@/components/chrome/cursor";
 import { Intro } from "@/components/chrome/intro";
 import { ScrollProgress } from "@/components/chrome/scroll-progress";
 import { CartDrawer } from "@/components/shop/cart-drawer";
+import { getUser } from "@/lib/auth/dal";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,7 +31,12 @@ export const viewport: Viewport = {
   themeColor: "#0a1220",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // A local cookie decrypt, not a network call — the session JWT already
+  // carries the name, so this doesn't hold up the first paint the way a
+  // database-backed session check would. See lib/auth/session.ts.
+  const user = await getUser();
+
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <body className="grain min-h-dvh antialiased">
@@ -43,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ScrollProgress />
         <Cursor />
         <Intro />
-        <Header />
+        <Header user={user} />
         {children}
         <Footer />
         {/* Outside the route tree: the drawer has to survive navigation. */}

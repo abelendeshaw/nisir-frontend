@@ -18,6 +18,13 @@ import { BUILD_VOLUME_MM } from "@/lib/shop/quote";
  * `lib/shop/mesh.ts`, which is what lets every mesh here be declarative: no
  * traversing a prop to swap materials, no imperative camera work.
  *
+ * `mesh.ts` measures and reports geometry in file space, where Z is up — the
+ * near-universal convention for STL/3MF/OBJ/PLY, because it is a print's own
+ * convention: the bed is the XY plane and height climbs in Z. Three.js scenes
+ * are Y-up, so the geometry group below is rotated onto its back once, here,
+ * purely for display. Nothing upstream (pricing, the bbox readout, the
+ * oversize check) sees this rotation — they stay in file space.
+ *
  * Loaded through `next/dynamic` with `ssr: false` — three has no business
  * being rendered on a server.
  */
@@ -68,16 +75,19 @@ export default function ModelViewer({
 
       <group scale={scale}>
         <group position={[0, height / 2, 0]}>
-          {geometries.map((geometry, i) => (
-            <mesh key={i} geometry={geometry}>
-              <meshStandardMaterial
-                color={colour}
-                roughness={roughness}
-                metalness={metalness}
-                wireframe={wireframe}
-              />
-            </mesh>
-          ))}
+          {/* File space is Z-up; the scene is Y-up. Stand the model up. */}
+          <group rotation={[-Math.PI / 2, 0, 0]}>
+            {geometries.map((geometry, i) => (
+              <mesh key={i} geometry={geometry}>
+                <meshStandardMaterial
+                  color={colour}
+                  roughness={roughness}
+                  metalness={metalness}
+                  wireframe={wireframe}
+                />
+              </mesh>
+            ))}
+          </group>
         </group>
       </group>
 

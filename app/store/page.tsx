@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Storefront } from "@/components/shop/storefront";
@@ -37,7 +38,12 @@ export default function StorePage() {
             immediate
             delay={0.12}
             className="d0 mt-8"
-            lines={[<>Ethiopia,</>, <>in <span className="thin text-gold">matter</span>.</>]}
+            lines={[
+              <Fragment key="a">Ethiopia,</Fragment>,
+              <Fragment key="b">
+                in <span className="thin text-gold">matter</span>.
+              </Fragment>,
+            ]}
           />
 
           <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,32rem)_minmax(0,1fr)] lg:items-end">
@@ -129,7 +135,12 @@ export default function StorePage() {
             <Lines
               as="h2"
               className="d2 mt-7 max-w-[15ch]"
-              lines={[<>Bring your own</>, <><span className="thin">geometry</span>.</>]}
+              lines={[
+                <Fragment key="a">Bring your own</Fragment>,
+                <Fragment key="b">
+                  <span className="thin">geometry</span>.
+                </Fragment>,
+              ]}
             />
             <Reveal delay={0.2}>
               <p className="lede mt-9 max-w-xl">
@@ -188,7 +199,12 @@ export default function StorePage() {
 
       <Cta
         eyebrow="Something larger"
-        lines={[<>A run, not</>, <>a <span className="thin text-gold">single</span>.</>]}
+        lines={[
+          <Fragment key="a">A run, not</Fragment>,
+          <Fragment key="b">
+            a <span className="thin text-gold">single</span>.
+          </Fragment>,
+        ]}
         href="/services/3d-printing"
         action="Brief a print run"
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { MagicCard } from "@/components/ui/surfaces";
@@ -51,7 +51,12 @@ export function Process() {
             <Lines
               as="h2"
               className="d1 mt-8 max-w-[12ch]"
-              lines={[<>Four moves,</>, <>every <span className="thin text-gold">time</span>.</>]}
+              lines={[
+                <Fragment key="a">Four moves,</Fragment>,
+                <Fragment key="b">
+                  every <span className="thin text-gold">time</span>.
+                </Fragment>,
+              ]}
             />
           </div>
           <Reveal delay={0.15}>

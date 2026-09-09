@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ServiceIndex } from "@/components/sections/service-index";
@@ -39,7 +40,12 @@ export default function ServicesPage() {
             immediate
             delay={0.12}
             className="d1 mt-8 max-w-[12ch]"
-            lines={[<>Seven ways</>, <>to make it <span className="thin text-gold">real</span>.</>]}
+            lines={[
+              <Fragment key="a">Seven ways</Fragment>,
+              <Fragment key="b">
+                to make it <span className="thin text-gold">real</span>.
+              </Fragment>,
+            ]}
           />
           <Reveal immediate delay={0.5} className="mt-10">
             <p className="lede max-w-xl">
@@ -111,7 +117,12 @@ export default function ServicesPage() {
 
       <Cta
         eyebrow="Not sure which"
-        lines={[<>Describe the</>, <>problem <span className="thin text-gold">instead</span>.</>]}
+        lines={[
+          <Fragment key="a">Describe the</Fragment>,
+          <Fragment key="b">
+            problem <span className="thin text-gold">instead</span>.
+          </Fragment>,
+        ]}
         action="Send a general inquiry"
       />
     </main>

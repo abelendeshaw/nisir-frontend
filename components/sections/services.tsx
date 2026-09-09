@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { ServiceIndex } from "@/components/sections/service-index";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { ArrowLink } from "@/components/ui/links";
@@ -19,7 +20,12 @@ export function Services() {
           <Lines
             as="h2"
             className="d1 mt-7 max-w-[14ch]"
-            lines={[<>Everything we</>, <>actually <span className="thin text-gold">make</span></>]}
+            lines={[
+              <Fragment key="a">Everything we</Fragment>,
+              <Fragment key="b">
+                actually <span className="thin text-gold">make</span>
+              </Fragment>,
+            ]}
           />
         </div>
         <Reveal delay={0.15} className="mt-8">

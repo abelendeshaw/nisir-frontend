@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Lines, Reveal } from "@/components/ui/reveal";
@@ -44,7 +45,12 @@ export function OrderFailed() {
             immediate
             delay={0.12}
             className="d1 mt-8 max-w-[14ch]"
-            lines={[<>Nothing was</>, <><span className="thin text-gold">charged</span>.</>]}
+            lines={[
+              <Fragment key="a">Nothing was</Fragment>,
+              <Fragment key="b">
+                <span className="thin text-gold">charged</span>.
+              </Fragment>,
+            ]}
           />
           <Reveal immediate delay={0.45}>
             <p className="lede mt-9 max-w-xl">

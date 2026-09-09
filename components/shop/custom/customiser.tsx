@@ -146,7 +146,7 @@ export function Customiser() {
         <div className="relative aspect-4/3 w-full overflow-hidden border-2 border-line bg-surface">
           <ModelViewer
             geometries={model.geometries}
-            height={model.stats.bboxMm[1]}
+            height={model.stats.bboxMm[2]}
             scale={scale / 100}
             colour={swatch.preview.color}
             roughness={swatch.preview.roughness}

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InquiryForm } from "@/components/forms/inquiry";
@@ -29,7 +30,12 @@ export default function ContactPage() {
             immediate
             delay={0.12}
             className="d1 mt-8 max-w-[11ch]"
-            lines={[<>Start with</>, <>the <span className="thin text-gold">idea</span>.</>]}
+            lines={[
+              <Fragment key="a">Start with</Fragment>,
+              <Fragment key="b">
+                the <span className="thin text-gold">idea</span>.
+              </Fragment>,
+            ]}
           />
         </div>
       </section>

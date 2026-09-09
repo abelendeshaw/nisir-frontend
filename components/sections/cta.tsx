@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { Magnetic } from "@/components/ui/magnetic";
@@ -38,10 +39,10 @@ export function Cta({
           className="d1 mx-auto mt-8 max-w-[14ch]"
           lines={
             lines ?? [
-              <>Bring us the</>,
-              <>
+              <Fragment key="a">Bring us the</Fragment>,
+              <Fragment key="b">
                 hard <span className="thin text-gold">half</span>.
-              </>,
+              </Fragment>,
             ]
           }
         />

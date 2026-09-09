@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Customiser } from "@/components/shop/custom/customiser";
@@ -49,7 +50,12 @@ export default function CustomPage() {
             immediate
             delay={0.12}
             className="d1 mt-8 max-w-[13ch]"
-            lines={[<>Your model,</>, <>on our <span className="thin text-gold">bed</span>.</>]}
+            lines={[
+              <Fragment key="a">Your model,</Fragment>,
+              <Fragment key="b">
+                on our <span className="thin text-gold">bed</span>.
+              </Fragment>,
+            ]}
           />
 
           <Reveal immediate delay={0.45}>

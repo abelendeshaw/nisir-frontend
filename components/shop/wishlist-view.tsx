@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Relic } from "@/components/shop/relic";
@@ -67,7 +68,12 @@ export function WishlistView() {
             immediate
             delay={0.1}
             className="d1 mt-8"
-            lines={[<>Kept</>, <>for <span className="thin text-gold">later</span>.</>]}
+            lines={[
+              <Fragment key="a">Kept</Fragment>,
+              <Fragment key="b">
+                for <span className="thin text-gold">later</span>.
+              </Fragment>,
+            ]}
           />
           <Reveal immediate delay={0.4}>
             <p className="lede mt-8 max-w-lg">

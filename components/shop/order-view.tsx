@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { LineRow } from "@/components/shop/line-row";
@@ -67,7 +68,12 @@ export function OrderView({ id }: { id: string }) {
             immediate
             delay={0.12}
             className="d1 mt-8 max-w-[13ch]"
-            lines={[<>It goes in</>, <>the <span className="thin text-gold">queue</span>.</>]}
+            lines={[
+              <Fragment key="a">It goes in</Fragment>,
+              <Fragment key="b">
+                the <span className="thin text-gold">queue</span>.
+              </Fragment>,
+            ]}
           />
           <Reveal immediate delay={0.45}>
             <p className="lede mt-9 max-w-xl">

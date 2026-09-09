@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { AnimatePresence } from "motion/react";
 import { LineRow } from "@/components/shop/line-row";
@@ -38,7 +39,12 @@ export function CartView() {
             immediate
             delay={0.1}
             className="d1 mt-8"
-            lines={[<>Your</>, <>cart<span className="thin text-gold">.</span></>]}
+            lines={[
+              <Fragment key="a">Your</Fragment>,
+              <Fragment key="b">
+                cart<span className="thin text-gold">.</span>
+              </Fragment>,
+            ]}
           />
           <Reveal immediate delay={0.4}>
             <p className="lede mt-8 max-w-lg">
