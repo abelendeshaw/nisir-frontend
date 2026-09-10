@@ -1,7 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { AuthError, loginRemote, signupRemote } from "@/lib/auth/backend";
+import { AuthError, loginRemote, revokeSessionRemote, signupRemote } from "@/lib/auth/backend";
+import { getUser } from "@/lib/auth/dal";
 import { createSession, deleteSession } from "@/lib/auth/session";
 
 /**
@@ -61,7 +62,23 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
   redirect("/account");
 }
 
+/**
+ * Signs out here and there.
+ *
+ * `deleteSession()` alone only forgets this browser's cookie, and the access
+ * token inside it stays live on nisir-backend-php indefinitely — its
+ * `sanctum.expiration` is null — so `verifiedUser()` would keep approving any
+ * copy of that cookie taken from a shared machine. Revoking first is what
+ * makes signing out mean something on both sides.
+ *
+ * Order matters: the remote call is best effort and never throws, but the
+ * cookie is cleared afterwards regardless, so a customer who clicked "sign
+ * out" is signed out of this browser whether or not the API answered.
+ */
 export async function logout(): Promise<void> {
+  const session = await getUser();
+  if (session) await revokeSessionRemote(session.token);
+
   await deleteSession();
   redirect("/");
 }

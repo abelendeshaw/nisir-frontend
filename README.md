@@ -4,11 +4,49 @@ The site for Nisir Designs — a multidisciplinary practice working across web,
 apps, brand, motion, 3D modelling, 3D printing and fashion education, from
 Ontario and Addis Ababa.
 
+## Running it
+
+Two processes. The storefront renders nothing on its own — the root layout
+awaits `GET /catalog`, so with no backend up every page throws rather than
+showing an empty store.
+
+**1. Start nisir-backend-php** (the catalogue, auth and orders):
+
 ```bash
+cd ../nisir-backend-php
+composer install && npm install
+cp .env.example .env && php artisan key:generate
+php artisan migrate --seed        # needs Postgres per its .env
+php artisan serve                 # http://localhost:8000
+```
+
+**2. Configure this app.** `.env.local` is gitignored; `.env.example` is the
+template and documents every variable:
+
+```bash
+cp .env.example .env.local
+openssl rand -base64 32           # paste into SESSION_SECRET
+```
+
+`SESSION_SECRET` signs the session cookie — any 32+ character random string
+works, it is not shared with the backend and nothing else has to know it.
+Changing it signs everyone out. `NISIR_API_URL` must match wherever step 1 is
+listening (`http://localhost:8000` by default).
+
+Both are validated at boot by `lib/env.ts`, so a missing or malformed one
+stops the server with a message naming it rather than failing later in front
+of a visitor.
+
+**3. Start this app:**
+
+```bash
+npm install
 npm run dev     # http://localhost:3000
 npm run build   # production build
 npm run lint
 ```
+
+Deploying is a different story with its own footguns — see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Design system
 

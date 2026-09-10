@@ -16,10 +16,17 @@ import { serverEnv } from "@/lib/env";
  * request without asking the backend anything: `getUser()` just decrypts what
  * is already in the request.
  *
- * The trade-off of a stateless session is the usual one: there is no server
- * side list of sessions to revoke. Logging out clears this browser's cookie;
- * it does not invalidate a copy of it elsewhere. Fine for now — this is the
- * same shape Next's own auth guide recommends for a first pass.
+ * The usual trade-off of a stateless session — nothing on the server to
+ * revoke — is answered rather than accepted. The cookie carries the backend's
+ * access token, and nisir-backend-php *does* keep a list of those, so
+ * `verifiedUser()` in `dal.ts` cross-checks one against `GET /auth/session`
+ * wherever a session actually guards something, and `logout()` revokes it
+ * with `DELETE /auth/session`. A cookie whose token has been withdrawn stops
+ * working within a request rather than at the end of its seven days.
+ *
+ * What is still true is that this file cannot revoke anything by itself.
+ * Changing `SESSION_SECRET` invalidates every cookie at once; short of that,
+ * the backend is the only thing that can end a session it did not issue.
  */
 
 export const COOKIE_NAME = "nisir_session";

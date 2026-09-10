@@ -12,8 +12,13 @@ import { Lines, Reveal } from "@/components/ui/reveal";
  * Sign in. `login` is a Server Action — the password crosses the wire once,
  * server to server, to nisir-backend; this component never sees the result
  * beyond "it worked" (a redirect) or a message to show.
+ *
+ * `expired` says the visitor did not come here by choice: their session was
+ * cross-checked against the backend and found revoked. Worth saying out loud,
+ * because from where they sit a signed-in account page just turned into a
+ * login form.
  */
-export function LoginView() {
+export function LoginView({ expired = false }: { expired?: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(login, undefined);
 
   return (
@@ -53,6 +58,13 @@ export function LoginView() {
             transition={{ duration: 0.5 }}
             className="flex flex-col gap-8"
           >
+            {expired && (
+              <p className="border-l-2 border-gold pl-4 text-[13px] leading-relaxed text-muted">
+                That session has ended — you signed out somewhere else, or it was
+                revoked. Sign in again to pick up where you left off.
+              </p>
+            )}
+
             <div>
               <TextField name="email" label="Email" type="email" required placeholder="you@example.com" />
               {state?.errors?.email && (

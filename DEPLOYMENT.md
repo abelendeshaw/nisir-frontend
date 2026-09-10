@@ -171,6 +171,16 @@ curl -sI https://yourdomain.com | grep -i x-powered-by
 Then click through the parts that need the backend: the store lists products,
 signup creates an account, and the session survives a refresh.
 
+One more worth doing by hand, because it is the one that fails silently. Sign
+in, then sign out, then press Back to the account page. You should land on the
+login form saying the session has ended — not on a working account page. That
+is `verifiedUser()` in `lib/auth/dal.ts` asking `GET /auth/session` whether the
+token in the cookie is still live. If the account page still renders, the
+backend is not serving `/auth/session` (a 404 or a 5xx there is read as "API
+having a bad day", and the session is kept rather than every customer being
+signed out by a blip) — check that nisir-backend-php is deployed with the
+`/auth/session` routes.
+
 ## Checklist
 
 - [ ] `SESSION_SECRET` is freshly generated, not the development one
@@ -178,6 +188,8 @@ signup creates an account, and the session survives a refresh.
 - [ ] `NISIR_API_URL` is `https://`, or loopback if the backend is on the same box
 - [ ] `NEXT_PUBLIC_SITE_URL` was set *at build time*
 - [ ] nisir-backend is reachable from the server, and has CORS/TLS sorted
+- [ ] `GET /auth/session` answers on the backend — signing out ends the session
+      on both sides, not just in the browser that clicked it
 - [ ] The app runs under a process manager that restarts it
 - [ ] TLS certificate installed and http redirects to https
 
