@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import { fontVariables } from "@/lib/fonts";
 import { site } from "@/lib/site";
 import { Header } from "@/components/chrome/header";
@@ -34,6 +35,10 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Force runtime rendering so GoDaddy runtime environment variables
+  // like SESSION_SECRET and NISIR_API_URL are available.
+  await connection();
+
   // A local cookie decrypt, not a network call — the session JWT already
   // carries the name, so this doesn't hold up the first paint the way a
   // database-backed session check would. See lib/auth/session.ts.
@@ -49,8 +54,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        {/* Wraps rather than sits beside: nothing that prices something can
-            render before the catalogue tables are filled. */}
+
         <CatalogHydrator data={catalog}>
           <ScrollProgress />
           <Cursor />
@@ -58,7 +62,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <Header user={user} />
           {children}
           <Footer />
-          {/* Outside the route tree: the drawer has to survive navigation. */}
           <CartDrawer />
         </CatalogHydrator>
       </body>
