@@ -16,7 +16,7 @@ showing an empty store.
 cd ../nisir-backend-php
 composer install && npm install
 cp .env.example .env && php artisan key:generate
-php artisan migrate --seed        # needs Postgres per its .env
+php artisan migrate --seed        # needs MySQL/MariaDB per its .env
 php artisan serve                 # http://localhost:8000
 ```
 

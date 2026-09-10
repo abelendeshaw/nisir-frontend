@@ -13,6 +13,21 @@ const PROTECTED = ["/account"];
 const AUTH_ONLY = ["/account/login", "/account/signup"];
 
 /**
+ * Under `/account`, but open to everyone.
+ *
+ * The password reset flow lives here and has to work for exactly the person
+ * who cannot sign in. `PROTECTED` matches the whole `/account/` subtree, so
+ * without this list a signed-out visitor following a reset link out of their
+ * email would be bounced to the login form they are trying to get past — the
+ * flow would be unreachable by the only people who need it.
+ *
+ * They are not `AUTH_ONLY` either. Someone can be signed in on this browser
+ * and still be resetting the password, and sending them to `/account` in the
+ * middle of that would throw away a link that only works once.
+ */
+const PUBLIC = ["/account/forgot-password", "/account/reset-password"];
+
+/**
  * How a page that has just been told the backend disowns this cookie asks for
  * it to be cleared.
  *
@@ -31,6 +46,10 @@ const EXPIRED = "expired";
 
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+
+  // Checked before anything else, so the reset flow is never redirected.
+  if (PUBLIC.includes(pathname)) return NextResponse.next();
+
   const isProtected = PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`)) &&
     !AUTH_ONLY.includes(pathname);
   const isAuthOnly = AUTH_ONLY.includes(pathname);

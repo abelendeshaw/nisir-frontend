@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/account/lo
   // time this renders. Without a word here, a customer whose session was
   // revoked elsewhere just finds themselves back at a login form for no
   // visible reason.
-  const expired = "expired" in (await searchParams);
+  const params = await searchParams;
 
-  return <LoginView expired={expired} />;
+  return <LoginView expired={"expired" in params} reset={"reset" in params} />;
 }

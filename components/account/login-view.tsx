@@ -18,7 +18,7 @@ import { Lines, Reveal } from "@/components/ui/reveal";
  * because from where they sit a signed-in account page just turned into a
  * login form.
  */
-export function LoginView({ expired = false }: { expired?: boolean }) {
+export function LoginView({ expired = false, reset = false }: { expired?: boolean; reset?: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(login, undefined);
 
   return (
@@ -58,6 +58,13 @@ export function LoginView({ expired = false }: { expired?: boolean }) {
             transition={{ duration: 0.5 }}
             className="flex flex-col gap-8"
           >
+            {reset && (
+              <p className="border-l-2 border-gold pl-4 text-[13px] leading-relaxed text-muted">
+                Your password has been changed, and every other device has been
+                signed out. Sign in with the new one.
+              </p>
+            )}
+
             {expired && (
               <p className="border-l-2 border-gold pl-4 text-[13px] leading-relaxed text-muted">
                 That session has ended — you signed out somewhere else, or it was
@@ -87,9 +94,17 @@ export function LoginView({ expired = false }: { expired?: boolean }) {
                   {pending ? "Signing in…" : "Sign in"}
                 </button>
               </Magnetic>
-              <Link href="/account/signup" className="tag-sm ul text-muted hover:text-accent">
-                New here? Create an account
-              </Link>
+              <div className="flex flex-col items-end gap-2">
+                <Link href="/account/signup" className="tag-sm ul text-muted hover:text-accent">
+                  New here? Create an account
+                </Link>
+                <Link
+                  href="/account/forgot-password"
+                  className="tag-sm ul text-faint hover:text-accent"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
             </div>
           </motion.form>
         </div>
