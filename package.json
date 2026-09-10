@@ -5,9 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "build:standalone": "next build && node scripts/package-standalone.mjs",
     "start": "next start",
-    "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
   },
