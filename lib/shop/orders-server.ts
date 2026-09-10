@@ -1,5 +1,7 @@
 import "server-only";
 
+import { apiUrl } from "@/lib/env";
+
 import type { CartLine, Totals, ZoneId, ShippingId } from "./pricing";
 import type { PaymentMethodId } from "./store";
 
@@ -80,14 +82,6 @@ export type PlaceOrderInput = {
   promoCode?: string;
   paymentMethod: PaymentMethodId;
 };
-
-function apiUrl(path: string): string {
-  const base = process.env.NISIR_API_URL;
-  if (!base) {
-    throw new OrderError("NISIR_API_URL is not set — copy .env.example to .env.local.");
-  }
-  return new URL(path, base).toString();
-}
 
 async function call<T>(
   path: string,

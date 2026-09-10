@@ -1,5 +1,7 @@
 import "server-only";
 
+import { apiUrl } from "@/lib/env";
+
 /**
  * The one door into nisir-backend for auth. Server Actions call these; the
  * browser never talks to the backend directly, and never sees `NISIR_API_URL`.
@@ -24,14 +26,6 @@ import "server-only";
 export class AuthError extends Error {}
 
 type BackendUser = { id: string; email: string; name: string; token: string };
-
-function apiUrl(path: string): string {
-  const base = process.env.NISIR_API_URL;
-  if (!base) {
-    throw new AuthError("NISIR_API_URL is not set — copy .env.example to .env.local.");
-  }
-  return new URL(path, base).toString();
-}
 
 async function call(path: string, body: unknown): Promise<BackendUser> {
   let response: Response;

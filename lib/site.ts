@@ -11,7 +11,17 @@ export const site = {
   description:
     "Nisir is a multidisciplinary design practice — web, apps, brand, motion, 3D modelling, 3D printing and fashion education, across Ontario and Addis Ababa.",
   email: "hello@nisirdesigns.com",
-  url: "https://nisirdesigns.com",
+  /**
+   * Canonical origin — `metadataBase`, Open Graph and canonical links all hang
+   * off it. Overridable so a staging or preview deploy doesn't advertise
+   * production URLs in its share cards.
+   *
+   * Written as a literal `process.env.X` read on purpose: Next inlines
+   * `NEXT_PUBLIC_` variables at build time by substituting the text, so a
+   * dynamic lookup like `process.env[name]` would never be replaced. It is also
+   * baked in at `next build`, not read at runtime — rebuild to change it.
+   */
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://nisirdesigns.com",
   founded: 2019,
 } as const;
 

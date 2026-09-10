@@ -1,6 +1,7 @@
 "use server";
 
 import { getUser } from "@/lib/auth/dal";
+import { apiUrl } from "@/lib/env";
 import {
   OrderError,
   placeOrder,
@@ -57,15 +58,12 @@ export async function uploadCustomModel(
     return { ok: false, message: "No file was selected." };
   }
 
-  const base = process.env.NISIR_API_URL;
-  if (!base) return { ok: false, message: "NISIR_API_URL is not set." };
-
   const upstream = new FormData();
   upstream.append("file", file, file.name);
 
   let response: Response;
   try {
-    response = await fetch(new URL("/custom/uploads", base), {
+    response = await fetch(apiUrl("/custom/uploads"), {
       method: "POST",
       body: upstream,
       cache: "no-store",

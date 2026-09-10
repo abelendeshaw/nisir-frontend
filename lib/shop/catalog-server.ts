@@ -1,6 +1,8 @@
 import "server-only";
 
 import { cache } from "react";
+
+import { apiUrl, serverEnv } from "@/lib/env";
 import { setCatalog, type CatalogPayload } from "./catalog-store";
 
 /**
@@ -16,20 +18,18 @@ import { setCatalog, type CatalogPayload } from "./catalog-store";
  * and to hand the same payload to the client.
  */
 export const loadCatalog = cache(async (): Promise<CatalogPayload> => {
-  const base = process.env.NISIR_API_URL;
-  if (!base) {
-    throw new Error("NISIR_API_URL is not set — copy .env.example to .env.local.");
-  }
-
   let response: Response;
   try {
-    response = await fetch(new URL("/catalog", base), {
+    response = await fetch(apiUrl("/catalog"), {
       next: { revalidate: 60 },
     });
   } catch (cause) {
     // Loud rather than an empty storefront: a catalogue that silently renders
     // zero objects is far harder to diagnose than a failed fetch.
-    throw new Error(`Could not reach nisir-backend at ${base}.`, { cause });
+    throw new Error(
+      `Could not reach nisir-backend at ${serverEnv().NISIR_API_URL}.`,
+      { cause },
+    );
   }
 
   if (!response.ok) {

@@ -3,6 +3,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
+import { serverEnv } from "@/lib/env";
+
 /**
  * The session, signed rather than stored.
  *
@@ -25,14 +27,10 @@ const SESSION_LIFETIME = "7d";
 const SESSION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 function secretKey() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    throw new Error(
-      "SESSION_SECRET is not set. Copy .env.example to .env.local and fill it in " +
-        "(openssl rand -base64 32).",
-    );
-  }
-  return new TextEncoder().encode(secret);
+  // Presence, length and placeholder checks all happen in `lib/env.ts`, and
+  // `instrumentation.ts` runs them at startup — by the time a request gets
+  // here the secret is known good.
+  return new TextEncoder().encode(serverEnv().SESSION_SECRET);
 }
 
 export type SessionUser = {
@@ -88,7 +86,7 @@ export async function createSession(user: SessionUser): Promise<void> {
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: serverEnv().isProduction,
     sameSite: "lax",
     path: "/",
     expires: new Date(Date.now() + SESSION_LIFETIME_MS),
