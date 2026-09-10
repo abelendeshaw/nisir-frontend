@@ -94,6 +94,10 @@ async function call<T>(
     response = await fetch(apiUrl(path), {
       ...rest,
       headers: {
+        // Laravel picks between a JSON error and an HTML one on this header,
+        // and picks before anything else gets a say. Without it an expired
+        // token on a guarded route comes back 500 instead of 401.
+        Accept: "application/json",
         ...(rest.body ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...rest.headers,

@@ -1,7 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { AuthError, loginRemote, revokeSessionRemote, signupRemote } from "@/lib/auth/backend";
+import {
+  AuthError,
+  forgotPasswordRemote,
+  loginRemote,
+  resetPasswordRemote,
+  revokeSessionRemote,
+  signupRemote,
+} from "@/lib/auth/backend";
 import { getUser } from "@/lib/auth/dal";
 import { createSession, deleteSession } from "@/lib/auth/session";
 
@@ -17,6 +24,8 @@ export type FormState =
   | {
       errors?: { name?: string[]; email?: string[]; password?: string[] };
       message?: string;
+      /** Set by `requestPasswordReset` so the form can swap itself for a note. */
+      sent?: boolean;
     }
   | undefined;
 
@@ -60,6 +69,66 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
   }
 
   redirect("/account");
+}
+
+/**
+ * Step one of a reset: ask for the email.
+ *
+ * Always reports success, even for an address with no account. The backend
+ * refuses to distinguish the two on purpose, and undoing that here — "no such
+ * account" — would hand back exactly the answer it withheld.
+ */
+export async function requestPasswordReset(
+  _state: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!EMAIL_RE.test(email)) return { errors: { email: ["Enter a valid email."] } };
+
+  try {
+    await forgotPasswordRemote(email);
+  } catch (cause) {
+    return { message: cause instanceof AuthError ? cause.message : "Something went wrong." };
+  }
+
+  return { sent: true };
+}
+
+/**
+ * Step two: the token from the email, plus a new password.
+ *
+ * Signs nobody in on success. The backend revokes every access token the
+ * account had as part of the reset, so there is nothing left to build a
+ * session from — and asking someone to type the password they just chose is
+ * the ordinary shape of this flow anyway.
+ */
+export async function resetPassword(
+  _state: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const token = String(formData.get("token") ?? "");
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  const errors: NonNullable<FormState>["errors"] = {};
+  if (password.length < 8) errors.password = ["At least 8 characters."];
+  // Checked here and nowhere else: the backend has no second field to compare
+  // against, so a typo would otherwise become a password nobody knows.
+  else if (password !== confirm) errors.password = ["Those two do not match."];
+  if (Object.keys(errors).length > 0) return { errors };
+
+  if (!token || !email) {
+    return { message: "That reset link is incomplete. Ask for a new one." };
+  }
+
+  try {
+    await resetPasswordRemote({ token, email, password });
+  } catch (cause) {
+    return { message: cause instanceof AuthError ? cause.message : "Something went wrong." };
+  }
+
+  redirect("/account/login?reset=1");
 }
 
 /**

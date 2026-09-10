@@ -54,7 +54,7 @@ async function call(path: string, body: unknown): Promise<BackendUser> {
   try {
     response = await fetch(apiUrl(path), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(body),
       cache: "no-store",
     });
@@ -118,6 +118,73 @@ export function loginRemote(fields: { email: string; password: string }) {
   return call("/auth/login", fields);
 }
 
+/* ----------------------------------------------------------- password reset */
+
+/**
+ * Neither of these returns a user, so neither goes through `call()` above —
+ * that helper exists to validate a `{id, email, name, token}` body and would
+ * reject both of these for not having one.
+ *
+ *   POST /auth/forgot-password { email }                   -> 200 always
+ *   POST /auth/reset-password  { token, email, password }  -> 200, or 400 if
+ *                                                             the link is spent
+ */
+async function post(path: string, body: unknown): Promise<Response> {
+  try {
+    return await fetch(apiUrl(path), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch {
+    throw new AuthError("Can't reach the server right now. Try again in a moment.");
+  }
+}
+
+/** Rate-limit and validation handling shared by both steps. */
+async function guard(response: Response): Promise<void> {
+  if (response.status === 429) {
+    const seconds = Number(response.headers.get("Retry-After"));
+    throw new AuthError(
+      Number.isFinite(seconds) && seconds > 0
+        ? `Too many attempts. Try again in ${Math.ceil(seconds)} seconds.`
+        : "Too many attempts. Wait a minute and try again.",
+    );
+  }
+  if (response.status === 400 || response.status === 422) {
+    throw new AuthError((await readMessage(response)) ?? "Check the details and try again.");
+  }
+  if (!response.ok) {
+    throw new AuthError("Something went wrong on our end. Try again in a moment.");
+  }
+}
+
+/**
+ * Asks the backend to email a reset link.
+ *
+ * Answers the same way whether or not that address has an account — the
+ * backend deliberately refuses to say, so this cannot be used to find out who
+ * shops here, and neither can the page that calls it.
+ */
+export async function forgotPasswordRemote(email: string): Promise<void> {
+  await guard(await post("/auth/forgot-password", { email }));
+}
+
+/**
+ * Spends the token from that email and sets the new password.
+ *
+ * A 400 means expired, already used, or tampered with — the backend does not
+ * distinguish them, and neither should the page.
+ */
+export async function resetPasswordRemote(fields: {
+  token: string;
+  email: string;
+  password: string;
+}): Promise<void> {
+  await guard(await post("/auth/reset-password", fields));
+}
+
 /* ------------------------------------------------------------------ session */
 
 /**
@@ -149,7 +216,7 @@ export async function checkSessionRemote(token: string): Promise<SessionCheck> {
   let response: Response;
   try {
     response = await fetch(apiUrl("/auth/session"), {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       cache: "no-store",
     });
   } catch {
@@ -199,7 +266,7 @@ export async function revokeSessionRemote(token: string): Promise<void> {
   try {
     await fetch(apiUrl("/auth/session"), {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       cache: "no-store",
     });
   } catch {

@@ -65,6 +65,7 @@ export async function uploadCustomModel(
   try {
     response = await fetch(apiUrl("/custom/uploads"), {
       method: "POST",
+      headers: { Accept: "application/json" },
       body: upstream,
       cache: "no-store",
     });

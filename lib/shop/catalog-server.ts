@@ -21,6 +21,7 @@ export const loadCatalog = cache(async (): Promise<CatalogPayload> => {
   let response: Response;
   try {
     response = await fetch(apiUrl("/catalog"), {
+      headers: { Accept: "application/json" },
       next: { revalidate: 60 },
     });
   } catch (cause) {
