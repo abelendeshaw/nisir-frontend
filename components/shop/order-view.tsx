@@ -69,13 +69,49 @@ export function OrderView({ id, order }: { id: string; order: Order | null }) {
             ]}
           />
           <Reveal immediate delay={0.45}>
-            <p className="lede mt-9 max-w-xl">
-              Thank you, {order.contact.name.split(" ")[0]}. A confirmation is on its way to{" "}
-              <span className="text-fg">{order.contact.email}</span>
-              {order.totals.digitalOnly
-                ? ", with the download links attached."
-                : `, and the parcel is ready to leave in ${readyLow}–${readyHigh} business days.`}
-            </p>
+            {/*
+              Only promise the email when the server says it sent one.
+              `confirmationEmailed` is false when the mailer refused it — the
+              order is still real and still queued, because a mail outage
+              never fails an order, but telling somebody a confirmation is on
+              its way when it is not is how you lose a customer who then waits
+              two days before writing in.
+
+              `undefined` means the backend has no record either way (an order
+              placed before it tracked this), and reads as the ordinary case
+              rather than a failure.
+            */}
+            {order.confirmationEmailed === false ? (
+              <>
+                <p className="lede mt-9 max-w-xl">
+                  Thank you, {order.contact.name.split(" ")[0]}. Your order is placed and in the
+                  queue
+                  {order.totals.digitalOnly
+                    ? "."
+                    : `, ready to leave in ${readyLow}–${readyHigh} business days.`}
+                </p>
+                <p className="mt-6 max-w-xl border-l-2 border-gold pl-5 text-[14px] leading-relaxed text-fg">
+                  We could not send the confirmation email to{" "}
+                  <span className="font-semibold">{order.contact.email}</span> — that is a fault at
+                  our end, not a problem with your order. Keep the order number below, and email{" "}
+                  <a
+                    href={`mailto:${site.email}?subject=${encodeURIComponent(`Order ${order.id}`)}`}
+                    className="ul hover:text-accent"
+                  >
+                    {site.email}
+                  </a>{" "}
+                  if you would like the receipt sent again.
+                </p>
+              </>
+            ) : (
+              <p className="lede mt-9 max-w-xl">
+                Thank you, {order.contact.name.split(" ")[0]}. A confirmation is on its way to{" "}
+                <span className="text-fg">{order.contact.email}</span>
+                {order.totals.digitalOnly
+                  ? ", with the download links attached."
+                  : `, and the parcel is ready to leave in ${readyLow}–${readyHigh} business days.`}
+              </p>
+            )}
           </Reveal>
         </div>
       </section>

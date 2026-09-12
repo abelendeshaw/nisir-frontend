@@ -41,6 +41,15 @@ export type PlacedOrder = {
   promoCode: string | null;
   eta: [number, number];
   needsReview: boolean;
+  /**
+   * Whether the confirmation email actually left.
+   *
+   * The API never fails an order because mail failed, so this is the only
+   * signal that a receipt is not on its way. Optional because an order placed
+   * before the backend started recording it has no answer either way, and
+   * "unknown" should not be printed as "failed".
+   */
+  confirmationEmailed?: boolean;
 };
 
 export type OrderSummary = {

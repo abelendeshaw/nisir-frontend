@@ -177,40 +177,62 @@ export function CheckoutFlow({
     setBusy(true);
     setSubmitError(null);
 
-    // The order is created first, and priced by the server. If the catalogue
-    // moved under this cart — a price edit, an expired code, the last one
-    // sold — this is where that surfaces, before any card is touched.
-    const placed = await submitOrder({
-      lines: cart.lines.map(toOrderLine),
-      contact,
-      address:
-        totals.digitalOnly || shippingMethod?.pickup
-          ? undefined
-          : { ...address, country: zones.find((entry) => entry.id === zone)?.name ?? "" },
-      zone,
-      shipping,
-      promoCode: promo?.code,
-      paymentMethod: method,
-    });
+    /*
+     * Everything from here is wrapped, and it has to be.
+     *
+     * `submitOrder` converts the errors it anticipates into `{ok: false}`,
+     * but it cannot catch its own transport: a Server Action that never
+     * reaches the server — offline, a proxy that mangles the POST, a worker
+     * restarting mid-request — rejects instead of returning. Without a catch
+     * that rejection went nowhere, `busy` stayed true for good, and the
+     * button sat on "Placing the order…" forever. From the shopper's side
+     * that is a Pay button that does nothing at all, which is the worst
+     * possible failure on this particular screen: no order, no error, and no
+     * way to tell whether pressing it again would charge them twice.
+     */
+    try {
+      // The order is created first, and priced by the server. If the catalogue
+      // moved under this cart — a price edit, an expired code, the last one
+      // sold — this is where that surfaces, before any card is touched.
+      const placed = await submitOrder({
+        lines: cart.lines.map(toOrderLine),
+        contact,
+        address:
+          totals.digitalOnly || shippingMethod?.pickup
+            ? undefined
+            : { ...address, country: zones.find((entry) => entry.id === zone)?.name ?? "" },
+        zone,
+        shipping,
+        promoCode: promo?.code,
+        paymentMethod: method,
+      });
 
-    if (!placed.ok) {
+      if (!placed.ok) {
+        setBusy(false);
+        setSubmitError(placed.message);
+        return;
+      }
+
+      const result = await authorise(method, card, placed.order.id);
+      if (!result.ok) {
+        setBusy(false);
+        // The order stays on file as unpaid rather than vanishing, which is what
+        // lets the shopper retry against the same order number.
+        router.push(`/store/checkout/failed?code=${result.code}&order=${placed.order.id}`);
+        return;
+      }
+
+      cart.clear();
+      setPromoCode("");
+      // `busy` is deliberately left set: the receipt is a navigation away and
+      // re-enabling the button in the meantime invites a second order.
+      router.push(`/store/order/${placed.order.id}`);
+    } catch {
       setBusy(false);
-      setSubmitError(placed.message);
-      return;
+      setSubmitError(
+        "We could not reach the server to place that order. Nothing has been charged — check your connection and try again.",
+      );
     }
-
-    const result = await authorise(method, card, placed.order.id);
-    if (!result.ok) {
-      setBusy(false);
-      // The order stays on file as unpaid rather than vanishing, which is what
-      // lets the shopper retry against the same order number.
-      router.push(`/store/checkout/failed?code=${result.code}&order=${placed.order.id}`);
-      return;
-    }
-
-    cart.clear();
-    setPromoCode("");
-    router.push(`/store/order/${placed.order.id}`);
   }
 
   return (
