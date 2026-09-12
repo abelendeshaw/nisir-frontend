@@ -135,6 +135,14 @@ export type Product = {
   dimsMm: [number, number, number];
   /** Grams at `desk` scale in Matte Shell. */
   weightG: number;
+  /**
+   * Cubic centimetres, measured off the print model rather than estimated
+   * from the bounding box — which is why it is so much smaller than
+   * `dimsMm` multiplied out on anything with a hollow or a relief.
+   *
+   * Optional: only pieces that have actually been modelled have a figure.
+   */
+  volumeCm3?: number;
   leadDays: [number, number];
   story: string;
   /** Bullet facts on the detail page. */

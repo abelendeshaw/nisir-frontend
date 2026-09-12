@@ -33,6 +33,18 @@ export function millimetres([w, h, d]: [number, number, number], scale = 1) {
   return [w, h, d].map((n) => Math.round(n * scale)).join(" × ") + "mm";
 }
 
+/**
+ * Volume as measured off the print model.
+ *
+ * One decimal below 100cm³ and none above it, because the figure is precise
+ * to a tenth on a medallion and spuriously so on a board game — `577.6cm³`
+ * reads as a measurement, `826.4cm³` as false confidence once the number is
+ * that large and the geometry that approximate.
+ */
+export function cubicCentimetres(value: number) {
+  return value >= 100 ? `${Math.round(value)}cm³` : `${value.toFixed(1)}cm³`;
+}
+
 /** `5–9 days`, or `Instant` for anything that downloads. */
 export function leadTime([min, max]: [number, number]) {
   if (max === 0) return "Instant download";

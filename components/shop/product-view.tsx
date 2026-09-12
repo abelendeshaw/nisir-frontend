@@ -8,7 +8,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { Magnetic } from "@/components/ui/magnetic";
 import { ArrowLink } from "@/components/ui/links";
-import { grams, leadTime, millimetres, money } from "@/lib/shop/format";
+import { cubicCentimetres, grams, leadTime, millimetres, money } from "@/lib/shop/format";
 import {
   configuredPrice,
   defaultConfiguration,
@@ -219,6 +219,16 @@ export function ProductView({ product, related }: { product: Product; related: P
                     <>
                       <Stat label="Dimensions" value={millimetres(product.dimsMm, scale)} />
                       <Stat label="Weight" value={grams(product.weightG * scale ** 3)} />
+                      {/* Measured from the model, and scaled by the cube like
+                          the weight it derives from — the two would otherwise
+                          disagree the moment a size other than `desk` is
+                          chosen. Absent for anything not yet modelled. */}
+                      {product.volumeCm3 !== undefined && (
+                        <Stat
+                          label="Volume"
+                          value={cubicCentimetres(product.volumeCm3 * scale ** 3)}
+                        />
+                      )}
                     </>
                   )}
                   <Stat
