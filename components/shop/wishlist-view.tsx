@@ -125,7 +125,12 @@ export function WishlistView() {
                       className="flex flex-col gap-5 border-b border-line py-7 sm:flex-row sm:items-center"
                     >
                       <Link href={`/store/${product.slug}`} className="w-24 shrink-0 sm:w-28">
-                        <Relic kind={product.relic} className="aspect-4/5" quiet />
+                        <Relic
+                          kind={product.relic}
+                          src={product.image}
+                          className="aspect-4/5"
+                          quiet
+                        />
                       </Link>
 
                       <div className="min-w-0 flex-1">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { Relic } from "@/components/shop/relic";
 import { Stepper } from "@/components/shop/bits";
+import { getProduct } from "@/lib/shop/catalog";
 import { money } from "@/lib/shop/format";
 import { lineTotal, type CartLine } from "@/lib/shop/pricing";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,17 @@ export function LineRow({
   const editable = variant !== "static" && !!onQty;
   const compact = variant !== "full";
 
+  /*
+   * A cart line stores `relic` but no picture — it is written to localStorage
+   * and a URL that may change does not belong in it. The catalogue is already
+   * hydrated on the client, so the image is looked up by slug instead.
+   *
+   * `undefined` is a perfectly normal answer here and falls back to the
+   * drawing: a receipt shown months later may well list a product that has
+   * since been retired from the catalogue.
+   */
+  const image = line.kind === "catalogue" ? getProduct(line.slug)?.image : undefined;
+
   return (
     <motion.div
       layout
@@ -42,9 +54,11 @@ export function LineRow({
       <div className={cn("shrink-0", compact ? "w-16" : "w-24 sm:w-28")}>
         {line.kind === "catalogue" ? (
           <Link href={`/store/${line.slug}`} className="block">
-            <Relic kind={line.relic} className="aspect-4/5" quiet />
+            <Relic kind={line.relic} src={image} className="aspect-4/5" quiet />
           </Link>
         ) : (
+          // A custom upload has no catalogue entry and never a photograph —
+          // the `mesh` drawing is the only thing there is to show.
           <Relic kind={line.relic} className="aspect-4/5" quiet />
         )}
       </div>

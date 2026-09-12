@@ -23,6 +23,8 @@ const VIEW = { w: 400, h: 500 };
 
 export function Relic({
   kind,
+  src,
+  alt = "",
   className,
   label,
   index,
@@ -31,6 +33,23 @@ export function Relic({
   quiet = false,
 }: {
   kind: RelicKind;
+  /**
+   * A photograph of the actual object. When present it replaces the drawing.
+   *
+   * The procedural figures below are not decoration to be layered under a
+   * photo — they are the stand-in for one. Every piece in the catalogue was
+   * line art until the designs were modelled and rendered, and a product with
+   * a picture of itself should show it. Products still without one keep the
+   * drawing, which is why this is optional rather than a replacement.
+   */
+  src?: string;
+  /**
+   * Defaults to empty, i.e. decorative — on a product card the name is
+   * already adjacent text inside the same link, and repeating it here makes a
+   * screen reader announce the object twice. Pass real alt text where the
+   * image is the content rather than an illustration of it.
+   */
+  alt?: string;
   className?: string;
   label?: string;
   index?: string;
@@ -48,7 +67,10 @@ export function Relic({
         className,
       )}
     >
-      {!quiet && (
+      {/* The gold wash sits behind the drawing and gives it depth. A
+          photograph covers it completely, so it is only drawn when there is
+          line art to light. */}
+      {!quiet && !src && (
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -59,23 +81,48 @@ export function Relic({
         />
       )}
 
-      <svg
-        viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="absolute inset-0 size-full"
-        aria-hidden
-      >
-        <g
-          stroke="currentColor"
-          fill="none"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          className="text-fg/45 transition-transform duration-[1.2s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/relic:scale-[1.035]"
-          style={{ transformOrigin: "center", transform: `rotate(${tilt}deg)` }}
+      {src ? (
+        /*
+          A plain `img`, not `next/image`. These files arrive from
+          nisir-backend already sized for a card — 900px square, 40-105KB —
+          so the optimiser has nothing left to save, and putting a remote host
+          through it would mean maintaining `images.remotePatterns` for every
+          environment plus shipping `sharp` into the standalone output this
+          app deploys as. `aspect` on the frame means there is no layout shift
+          to guard against either.
+
+          `object-cover` rather than `contain`: the renders are square and the
+          frames are 4:5, and a contained square leaves a visible white block
+          floating in the middle of a bone card. Cover fills the frame and
+          crops the margin, which on a centred object costs nothing.
+        */
+        // eslint-disable-next-line @next/next/no-img-element -- see above: pre-sized remote files, standalone output, no optimiser to gain from.
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 size-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/relic:scale-[1.035]"
+        />
+      ) : (
+        <svg
+          viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}
+          preserveAspectRatio="xMidYMid meet"
+          className="absolute inset-0 size-full"
+          aria-hidden
         >
-          <Figure kind={kind} still={still} />
-        </g>
-      </svg>
+          <g
+            stroke="currentColor"
+            fill="none"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            className="text-fg/45 transition-transform duration-[1.2s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/relic:scale-[1.035]"
+            style={{ transformOrigin: "center", transform: `rotate(${tilt}deg)` }}
+          >
+            <Figure kind={kind} still={still} />
+          </g>
+        </svg>
+      )}
 
       {!quiet && (
         <span

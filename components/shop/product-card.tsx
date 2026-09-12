@@ -32,6 +32,7 @@ export function ProductCard({
         <Link href={`/store/${product.slug}`} className="block">
           <Relic
             kind={product.relic}
+            src={product.image}
             variant={index + 1}
             className="aspect-4/5 border-0 border-b-2"
           />

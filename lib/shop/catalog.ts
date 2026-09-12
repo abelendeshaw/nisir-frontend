@@ -114,6 +114,16 @@ export type Product = {
   /** The subtitle — always the source the form comes from. */
   line: string;
   relic: RelicKind;
+  /**
+   * A photograph or render of the actual object, absolute, from the backend.
+   *
+   * Optional because `relic` remains the fallback and not a legacy: a design
+   * that has been priced but not yet photographed has no `image`, and the
+   * procedural figure keyed on `relic` is what stands in for it. Products
+   * that do have one should show it — line art is a placeholder for a
+   * photograph, not a substitute for one.
+   */
+  image?: string;
   category: Category;
   collection: string;
   /** Price of the default size in the default material, in cents. */

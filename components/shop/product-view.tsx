@@ -84,13 +84,24 @@ export function ProductView({ product, related }: { product: Product; related: P
             <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)] lg:self-start">
               <Relic
                 kind={product.relic}
+                src={product.image}
+                // Real alt text here, unlike on a card: this figure is the
+                // content of the page rather than an illustration beside it.
+                alt={product.image ? `${product.name} — ${product.line}` : ""}
                 className="aspect-4/5 w-full"
                 label={product.collection}
                 index={product.number}
               />
+              {/*
+                The caption has to follow the figure. Saying "drawn, not
+                photographed" under an actual render of the object is worse
+                than saying nothing — and the honest note for a render is that
+                it is a render, not a photograph of a finished print.
+              */}
               <p className="mt-4 text-[12px] leading-snug text-faint">
-                Drawn, not photographed — the figure is of the source the object refers to. Print
-                photography lands with the first production run.
+                {product.image
+                  ? "Rendered from the print model — the geometry is the object's own. Photography of a finished print follows the first production run."
+                  : "Drawn, not photographed — the figure is of the source the object refers to. Print photography lands with the first production run."}
               </p>
             </div>
 

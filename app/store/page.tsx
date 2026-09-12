@@ -99,6 +99,7 @@ export default async function StorePage() {
                 <Link href={`/store/${product.slug}`} className="group block">
                   <Relic
                     kind={product.relic}
+                    src={product.image}
                     variant={i * 3 + 1}
                     className="aspect-4/5"
                     label={product.collection}
