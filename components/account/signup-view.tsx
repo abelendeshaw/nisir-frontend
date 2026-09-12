@@ -4,96 +4,142 @@ import { Fragment, useActionState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { signup, type FormState } from "@/app/actions/auth";
-import { TextField } from "@/components/forms/fields";
+import { AuthShell, Notice, Reasons } from "@/components/account/auth-shell";
+import { Checkbox, PasswordField, TextField } from "@/components/forms/fields";
 import { Magnetic } from "@/components/ui/magnetic";
-import { Lines, Reveal } from "@/components/ui/reveal";
 
-export function SignupView() {
+/**
+ * Create an account.
+ *
+ * `next` is the page the visitor was trying to reach, already sanitised by
+ * the route (see `lib/auth/next-path.ts`). It arrives set whenever the
+ * checkout gate turned somebody around, which is now the most common way
+ * anyone reaches this form — so the form says why they are here rather than
+ * leaving them to work it out, and carries the destination through as a
+ * hidden field for the Server Action to redirect to.
+ */
+export function SignupView({ next }: { next?: string | null }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signup, undefined);
 
+  const fromCheckout = next?.startsWith("/store/checkout") ?? false;
+
   return (
-    <main id="main">
-      <section className="slab-ink pb-16 pt-[calc(var(--header-h)+clamp(48px,10vh,120px))]">
-        <div className="shell">
-          <Reveal immediate y={10}>
-            <p className="marker tag-sm">
-              <Link href="/" className="ul transition-colors hover:text-accent">
-                Home
-              </Link>
-              <span className="text-faint">Create account</span>
-            </p>
-          </Reveal>
+    <AuthShell
+      crumb="Create account"
+      lines={[
+        <Fragment key="a">Keep a</Fragment>,
+        <Fragment key="b">
+          <span className="thin text-gold">record</span>.
+        </Fragment>,
+      ]}
+      lede={
+        fromCheckout
+          ? "Checkout runs against an account, so the order you are about to place stays findable — by you, and by us when you ask about it."
+          : "Orders placed while signed in stay attached to your account, not just to this browser."
+      }
+      aside={
+        <Reasons
+          items={[
+            {
+              title: "Every order, kept",
+              detail:
+                "Receipts and print status live on the account. Clear this browser and they are still there.",
+            },
+            {
+              title: "Saved objects follow you",
+              detail:
+                "The pieces you set aside belong to the account, not to one device's storage.",
+            },
+            {
+              title: "Checkout already filled in",
+              detail: "Your name and email carry over. You are asked once, not every time.",
+            },
+          ]}
+        />
+      }
+    >
+      <motion.form
+        action={action}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="flex flex-col gap-8"
+      >
+        {/* Carried rather than remembered: a Server Action gets no access to
+            the URL of the page that rendered its form. */}
+        {next && <input type="hidden" name="next" value={next} />}
 
-          <Lines
-            as="h1"
-            immediate
-            delay={0.12}
-            className="d1 mt-8 max-w-[13ch]"
-            lines={[
-              <Fragment key="a">Keep a</Fragment>,
-              <Fragment key="b">
-                <span className="thin text-gold">record</span>.
-              </Fragment>,
-            ]}
-          />
+        {fromCheckout && (
+          <Notice tone="gold">
+            Your cart is waiting. Create an account and you will land straight back at
+            checkout with it intact.
+          </Notice>
+        )}
 
-          <Reveal immediate delay={0.45}>
-            <p className="lede mt-9 max-w-md">
-              Orders placed while signed in stay attached to your account, not just this browser.
-            </p>
-          </Reveal>
-        </div>
-      </section>
+        <TextField
+          name="name"
+          label="Name"
+          required
+          placeholder="Your name"
+          autoComplete="name"
+          autoFocus
+          error={state?.errors?.name?.[0]}
+        />
 
-      <section className="pb-24">
-        <div className="shell max-w-md">
-          <motion.form
-            action={action}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col gap-8"
+        <TextField
+          name="email"
+          label="Email"
+          type="email"
+          required
+          placeholder="you@example.com"
+          autoComplete="email"
+          error={state?.errors?.email?.[0]}
+        />
+
+        <PasswordField
+          name="password"
+          label="Password"
+          required
+          placeholder="At least 8 characters"
+          autoComplete="new-password"
+          hint="Eight characters or more. Longer beats stranger."
+          error={state?.errors?.password?.[0]}
+        />
+
+        <Checkbox name="terms" required error={state?.errors?.terms?.[0]}>
+          I agree to the{" "}
+          <Link href="/legal/terms" className="ul text-fg hover:text-accent">
+            Terms of Service
+          </Link>{" "}
+          and the{" "}
+          <Link href="/legal/privacy" className="ul text-fg hover:text-accent">
+            Privacy Policy
+          </Link>
+          .
+        </Checkbox>
+
+        {/* The action's own failure — an address already registered, an
+            unreachable backend — rather than a field that did not validate. */}
+        {state?.message && (
+          <p role="alert" className="text-[13px] text-accent">
+            {state.message}
+          </p>
+        )}
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-8 gap-y-5">
+          <Magnetic strength={0.25}>
+            <button type="submit" disabled={pending} className="btn btn-solid disabled:opacity-60">
+              {pending ? "Creating account…" : "Create account"}
+            </button>
+          </Magnetic>
+          <Link
+            href={next ? `/account/login?next=${encodeURIComponent(next)}` : "/account/login"}
+            className="tag-sm ul text-muted hover:text-accent"
           >
-            <div>
-              <TextField name="name" label="Name" required placeholder="Your name" />
-              {state?.errors?.name && <p className="mt-2 text-[13px] text-accent">{state.errors.name[0]}</p>}
-            </div>
-
-            <div>
-              <TextField name="email" label="Email" type="email" required placeholder="you@example.com" />
-              {state?.errors?.email && (
-                <p className="mt-2 text-[13px] text-accent">{state.errors.email[0]}</p>
-              )}
-            </div>
-
-            <div>
-              <TextField
-                name="password"
-                label="Password"
-                type="password"
-                required
-                placeholder="At least 8 characters"
-              />
-              {state?.errors?.password && (
-                <p className="mt-2 text-[13px] text-accent">{state.errors.password[0]}</p>
-              )}
-            </div>
-
-            {state?.message && <p className="text-[13px] text-accent">{state.message}</p>}
-
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-6">
-              <Magnetic strength={0.25}>
-                <button type="submit" disabled={pending} className="btn btn-solid">
-                  {pending ? "Creating account…" : "Create account"}
-                </button>
-              </Magnetic>
-              <Link href="/account/login" className="tag-sm ul text-muted hover:text-accent">
-                Already have one? Sign in
-              </Link>
-            </div>
-          </motion.form>
+            Already have one? Sign in
+          </Link>
         </div>
-      </section>
-    </main>
+      </motion.form>
+    </AuthShell>
   );
 }

@@ -17,7 +17,21 @@ const EASE = [0.76, 0, 0.24, 1] as const;
  * one email address. Hovering a service draws its plate on the right, so
  * the menu previews the work rather than just listing it.
  */
-export function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function Menu({
+  open,
+  onClose,
+  /**
+   * Threaded down from the header so the index can carry an account row.
+   * Without it this panel listed five destinations and no way to sign in,
+   * which left the whole account flow reachable only from one small link in
+   * the header — and that one was hidden below `sm`.
+   */
+  user,
+}: {
+  open: boolean;
+  onClose: () => void;
+  user: { name: string } | null;
+}) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [preview, setPreview] = useState(services[0]);
 
@@ -101,12 +115,47 @@ export function Menu({ open, onClose }: { open: boolean; onClose: () => void }) 
                 </motion.div>
               ))}
 
+              {/* The account, given its own row rather than left to the
+                  header. Signed out, creating one is the loud option: the
+                  store gates checkout behind it, so this is the step that
+                  unblocks buying anything. */}
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.7, delay: 0.56, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4"
+              >
+                {user ? (
+                  <Link
+                    href="/account"
+                    onClick={onClose}
+                    className="tag inline-flex items-center gap-3 border-2 border-line-strong px-5 py-3 transition-colors duration-500 hover:border-accent hover:text-accent"
+                  >
+                    <span className="size-1.5 rounded-full bg-gold" aria-hidden />
+                    {user.name.split(" ")[0]} — your account
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/account/signup" onClick={onClose} className="btn btn-solid">
+                      Create account
+                    </Link>
+                    <Link
+                      href="/account/login"
+                      onClick={onClose}
+                      className="tag-sm ul text-muted transition-colors hover:text-accent"
+                    >
+                      Or sign in
+                    </Link>
+                  </>
+                )}
+              </motion.div>
+
               <motion.a
                 href={`mailto:${site.email}`}
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.7, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="ul mt-10 w-fit text-lg text-muted transition-colors hover:text-accent"
+                transition={{ duration: 0.7, delay: 0.64, ease: [0.16, 1, 0.3, 1] }}
+                className="ul mt-8 w-fit text-lg text-muted transition-colors hover:text-accent"
               >
                 {site.email}
               </motion.a>

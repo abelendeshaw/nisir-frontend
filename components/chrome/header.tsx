@@ -81,12 +81,33 @@ export function Header({ user }: { user: { name: string } | null }) {
                 they forget they have. */}
             <WishlistLink className="tag hidden transition-colors hover:text-gold lg:inline-flex" />
             <CartButton className="tag flex items-center transition-colors hover:text-gold" />
-            <Link
-              href={user ? "/account" : "/account/login"}
-              className="tag hidden transition-colors hover:text-gold sm:inline-flex"
-            >
-              {user ? user.name.split(" ")[0] : "Sign in"}
-            </Link>
+
+            {/*
+              The account, and the one control here that is never hidden.
+              It used to be `hidden sm:inline-flex`, which took sign-in off
+              every phone on a site whose checkout now requires an account —
+              and it sat as plain text among four other plain-text controls,
+              so even on a desktop it read as the least important thing in the
+              row. Signed out it is now a bordered action; signed in it is the
+              visitor's own name behind a gold dot, which is also the only
+              persistent signal anywhere that the session is live.
+            */}
+            {user ? (
+              <Link
+                href="/account"
+                className="tag flex items-center gap-2 transition-colors hover:text-gold"
+              >
+                <span className="size-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+                <span className="max-w-[9ch] truncate">{user.name.split(" ")[0]}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/account/login"
+                className="tag inline-flex border-2 border-bone/35 px-3 py-2 transition-colors duration-500 hover:border-gold hover:text-gold sm:px-4"
+              >
+                Sign in
+              </Link>
+            )}
 
             <button
               type="button"
@@ -104,7 +125,7 @@ export function Header({ user }: { user: { name: string } | null }) {
         </div>
       </motion.header>
 
-      <Menu open={open} onClose={() => setOpen(false)} />
+      <Menu open={open} onClose={() => setOpen(false)} user={user} />
     </>
   );
 }

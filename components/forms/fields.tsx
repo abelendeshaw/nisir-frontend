@@ -16,12 +16,17 @@ function Shell({
   label,
   htmlFor,
   hint,
+  error,
+  errorId,
   className,
   children,
 }: {
   label: string;
   htmlFor?: string;
   hint?: string;
+  /** Rendered under the baseline and announced; see `TextField`. */
+  error?: string;
+  errorId?: string;
   className?: string;
   children: ReactNode;
 }) {
@@ -32,10 +37,25 @@ function Shell({
       </label>
       <div className="relative mt-3">
         {children}
+        {/*
+          The baseline, and the line that draws over it. A field in error
+          keeps its accent line permanently drawn rather than only on focus,
+          so the fault is visible while the eye is somewhere else on the form.
+        */}
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-line" />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-accent transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-focus-within:scale-x-100" />
+        <span
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left bg-accent transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            error ? "scale-x-100" : "scale-x-0 group-focus-within:scale-x-100",
+          )}
+        />
       </div>
-      {hint && <p className="mt-2 text-[12px] leading-snug text-faint">{hint}</p>}
+      {hint && !error && <p className="mt-2 text-[12px] leading-snug text-faint">{hint}</p>}
+      {error && (
+        <p id={errorId} role="alert" className="mt-2 text-[13px] leading-snug text-accent">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -50,6 +70,11 @@ export function TextField({
   required,
   placeholder,
   className,
+  hint,
+  error,
+  autoComplete,
+  defaultValue,
+  autoFocus,
 }: {
   name: string;
   label: string;
@@ -57,19 +82,174 @@ export function TextField({
   required?: boolean;
   placeholder?: string;
   className?: string;
+  hint?: string;
+  /**
+   * The server's complaint about this field, if it made one.
+   *
+   * Rendered by `Shell` and wired to the input with `aria-describedby`, so a
+   * screen reader reaching a field hears why it was rejected instead of
+   * finding the reason orphaned in the markup after it.
+   */
+  error?: string;
+  autoComplete?: string;
+  defaultValue?: string;
+  autoFocus?: boolean;
 }) {
   const id = useId();
+  const errorId = `${id}-error`;
   return (
-    <Shell label={label} htmlFor={id} className={className}>
+    <Shell label={label} htmlFor={id} hint={hint} error={error} errorId={errorId} className={className}>
       <input
         id={id}
         name={name}
         type={type}
         required={required}
         placeholder={placeholder}
+        autoComplete={autoComplete}
+        defaultValue={defaultValue}
+        autoFocus={autoFocus}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
         className={control}
       />
     </Shell>
+  );
+}
+
+/**
+ * A password, with the option of reading it back.
+ *
+ * The toggle is not a flourish. These forms ask for eight characters minimum
+ * and then hide every one of them, and a mistyped password on a signup form
+ * becomes an account whose owner cannot get back in. `autoComplete` is
+ * explicit for the same reason — `new-password` invites a manager to generate
+ * and store one, `current-password` invites it to fill one in, and the
+ * default guess between those two is frequently wrong.
+ */
+export function PasswordField({
+  name,
+  label,
+  required,
+  placeholder,
+  className,
+  hint,
+  error,
+  autoComplete = "current-password",
+}: {
+  name: string;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  className?: string;
+  hint?: string;
+  error?: string;
+  autoComplete?: "current-password" | "new-password";
+}) {
+  const id = useId();
+  const errorId = `${id}-error`;
+  const [shown, setShown] = useState(false);
+
+  return (
+    <Shell label={label} htmlFor={id} hint={hint} error={error} errorId={errorId} className={className}>
+      <input
+        id={id}
+        name={name}
+        type={shown ? "text" : "password"}
+        required={required}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={cn(control, "pr-14")}
+      />
+      <button
+        type="button"
+        onClick={() => setShown((was) => !was)}
+        // Announced rather than implied by an icon, and taken out of the tab
+        // order's way of the submit button it sits beside.
+        aria-label={shown ? "Hide password" : "Show password"}
+        aria-pressed={shown}
+        className="tag-sm absolute bottom-3 right-0 text-faint transition-colors duration-300 hover:text-accent focus-visible:text-accent"
+      >
+        {shown ? "Hide" : "Show"}
+      </button>
+    </Shell>
+  );
+}
+
+/**
+ * A single checkbox with prose beside it — the terms acceptance, mostly.
+ *
+ * Not built on `Shell`: a rule under a line of small print reads as a field
+ * that failed to get its label, and the control belongs inline with the
+ * sentence it agrees to rather than under a heading of its own. The native
+ * input is kept and styled with `accent-color` rather than replaced with a
+ * div, so it stays keyboard operable and announces its own state.
+ */
+export function Checkbox({
+  name,
+  children,
+  required,
+  error,
+  defaultChecked,
+  className,
+}: {
+  name: string;
+  children: ReactNode;
+  required?: boolean;
+  error?: string;
+  defaultChecked?: boolean;
+  className?: string;
+}) {
+  const id = useId();
+  const errorId = `${id}-error`;
+
+  return (
+    <div className={className}>
+      <div className="flex items-start gap-3">
+        <span className="relative mt-[3px] inline-flex shrink-0">
+          <input
+            id={id}
+            name={name}
+            type="checkbox"
+            required={required}
+            defaultChecked={defaultChecked}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            className="peer size-4 cursor-pointer appearance-none border border-line-strong bg-transparent transition-colors duration-300 checked:border-accent checked:bg-accent hover:border-accent"
+          />
+          {/*
+            The tick is a sibling, not a pseudo-element: `::after` on an
+            `input` is not rendered in every engine, so a box drawn that way
+            reads as filled-or-empty with no mark in it. Stroked in `--bg` so
+            it stays legible against the accent fill on whichever slab this
+            lands on.
+          */}
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden
+            className="pointer-events-none absolute inset-0 size-4 scale-50 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] peer-checked:scale-100 peer-checked:opacity-100"
+          >
+            <path
+              d="M3.5 8.25 6.5 11.25 12.5 4.75"
+              fill="none"
+              stroke="var(--bg)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        <label htmlFor={id} className="cursor-pointer text-[13px] leading-relaxed text-muted">
+          {children}
+        </label>
+      </div>
+      {error && (
+        <p id={errorId} role="alert" className="mt-2 text-[13px] leading-snug text-accent">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

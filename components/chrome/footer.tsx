@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Wordmark } from "@/components/chrome/mark";
 import { Magnetic } from "@/components/ui/magnetic";
 import { Scramble } from "@/components/ui/links";
+import { legalPages } from "@/lib/legal";
 import { services, serviceName } from "@/lib/services";
 import { locations, nav, site, social } from "@/lib/site";
 
@@ -149,11 +150,27 @@ export function Footer() {
         <Wordmark className="w-full text-bone/[0.16]" />
       </motion.div>
 
-      <div className="shell flex flex-col gap-3 border-t border-bone/10 py-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="shell flex flex-col gap-4 border-t border-bone/10 py-6 lg:flex-row lg:items-center lg:justify-between">
         <p className="tag-sm text-bone/35">
           © {new Date().getFullYear()} {site.legalName}
         </p>
-        <p className="tag-sm text-bone/35">{site.tagline}</p>
+
+        {/* The legal row, in the place people look for it. Not decoration:
+            the Terms are what the signup form asks agreement to, so they have
+            to be reachable from every page without going through signup. */}
+        <nav aria-label="Legal" className="flex flex-wrap gap-x-6 gap-y-2">
+          {legalPages.map((page) => (
+            <Link
+              key={page.href}
+              href={page.href}
+              className="tag-sm ul text-bone/35 transition-colors hover:text-gold"
+            >
+              {page.label}
+            </Link>
+          ))}
+        </nav>
+
+        <p className="tag-sm hidden text-bone/35 xl:block">{site.tagline}</p>
       </div>
     </footer>
   );

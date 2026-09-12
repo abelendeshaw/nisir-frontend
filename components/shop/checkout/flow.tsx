@@ -52,14 +52,27 @@ const customLead: Record<string, [number, number]> = {
  * The card step is still the staged one; `lib/shop/payment.ts` explains what
  * is real there and what is not.
  */
-export function CheckoutFlow() {
+export function CheckoutFlow({
+  /**
+   * The signed-in account, handed down by the page. Checkout is gated, so
+   * there is always one — the name and email only seed the contact step
+   * rather than fixing it, because an order can be sent to someone else.
+   */
+  customer,
+}: {
+  customer?: { name: string; email: string };
+}) {
   const router = useRouter();
   const cart = useCart();
   const [, setPromoCode] = usePromoCode();
   const promo = useAppliedPromo(cart.subtotalCents);
 
   const [step, setStep] = useState<StepId>("contact");
-  const [contact, setContact] = useState({ name: "", email: "", phone: "" });
+  const [contact, setContact] = useState({
+    name: customer?.name ?? "",
+    email: customer?.email ?? "",
+    phone: "",
+  });
   const [zone, setZone] = useState<ZoneId>("ca");
   const [address, setAddress] = useState({
     line1: "",

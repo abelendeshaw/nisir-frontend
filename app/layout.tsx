@@ -7,6 +7,7 @@ import { Footer } from "@/components/chrome/footer";
 import { Cursor } from "@/components/chrome/cursor";
 import { Intro } from "@/components/chrome/intro";
 import { ScrollProgress } from "@/components/chrome/scroll-progress";
+import { CookieNotice } from "@/components/chrome/cookie-notice";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 import { CatalogHydrator } from "@/components/shop/catalog-hydrator";
 import { getUser } from "@/lib/auth/dal";
@@ -63,6 +64,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {children}
           <Footer />
           <CartDrawer />
+          <CookieNotice />
         </CatalogHydrator>
       </body>
     </html>

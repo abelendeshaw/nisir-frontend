@@ -10,6 +10,7 @@ import {
   signupRemote,
 } from "@/lib/auth/backend";
 import { getUser } from "@/lib/auth/dal";
+import { safeNext } from "@/lib/auth/next-path";
 import { createSession, deleteSession } from "@/lib/auth/session";
 
 /**
@@ -22,7 +23,12 @@ import { createSession, deleteSession } from "@/lib/auth/session";
 
 export type FormState =
   | {
-      errors?: { name?: string[]; email?: string[]; password?: string[] };
+      errors?: {
+        name?: string[];
+        email?: string[];
+        password?: string[];
+        terms?: string[];
+      };
       message?: string;
       /** Set by `requestPasswordReset` so the form can swap itself for a note. */
       sent?: boolean;
@@ -30,6 +36,18 @@ export type FormState =
   | undefined;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Where to go once there is a session.
+ *
+ * `/account` unless the form carried somewhere better — which it does when
+ * the visitor was sent here by the checkout gate and is trying to get back to
+ * the till. Sanitised rather than trusted: see `lib/auth/next-path.ts` for
+ * what that field can otherwise be made to do.
+ */
+function destination(formData: FormData): string {
+  return safeNext(String(formData.get("next") ?? "")) ?? "/account";
+}
 
 export async function signup(_state: FormState, formData: FormData): Promise<FormState> {
   const name = String(formData.get("name") ?? "").trim();
@@ -40,7 +58,19 @@ export async function signup(_state: FormState, formData: FormData): Promise<For
   if (name.length < 1) errors.name = ["Enter your name."];
   if (!EMAIL_RE.test(email)) errors.email = ["Enter a valid email."];
   if (password.length < 8) errors.password = ["At least 8 characters."];
+  /*
+   * Checked on the server as well as in the markup, because `required` on a
+   * checkbox is a browser courtesy and nothing more — the form posts fine
+   * without it from anything that is not a browser. An account is where the
+   * terms are actually agreed to, so this is the one place that can refuse to
+   * create one without agreement.
+   */
+  if (formData.get("terms") !== "on") {
+    errors.terms = ["Please accept the terms and the privacy policy."];
+  }
   if (Object.keys(errors).length > 0) return { errors };
+
+  const next = destination(formData);
 
   try {
     const user = await signupRemote({ name, email, password });
@@ -49,7 +79,7 @@ export async function signup(_state: FormState, formData: FormData): Promise<For
     return { message: cause instanceof AuthError ? cause.message : "Something went wrong." };
   }
 
-  redirect("/account");
+  redirect(next);
 }
 
 export async function login(_state: FormState, formData: FormData): Promise<FormState> {
@@ -61,6 +91,8 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
   if (password.length < 1) errors.password = ["Enter your password."];
   if (Object.keys(errors).length > 0) return { errors };
 
+  const next = destination(formData);
+
   try {
     const user = await loginRemote({ email, password });
     await createSession({ userId: user.id, email: user.email, name: user.name, token: user.token });
@@ -68,7 +100,7 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
     return { message: cause instanceof AuthError ? cause.message : "Something went wrong." };
   }
 
-  redirect("/account");
+  redirect(next);
 }
 
 /**

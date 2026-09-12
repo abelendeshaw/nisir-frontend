@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/auth/next-path";
 import { COOKIE_NAME, decrypt } from "@/lib/auth/session";
 
 /**
@@ -67,10 +68,22 @@ export async function proxy(request: NextRequest) {
   const session = await decrypt(request.cookies.get(COOKIE_NAME)?.value);
 
   if (isProtected && !session) {
-    return NextResponse.redirect(new URL("/account/login", request.url));
+    // Carry the page they were trying to reach, so signing in returns them to
+    // it instead of dropping them on the account page.
+    const login = new URL("/account/login", request.url);
+    login.searchParams.set("next", pathname);
+    return NextResponse.redirect(login);
   }
   if (isAuthOnly && session) {
-    return NextResponse.redirect(new URL("/account", request.url));
+    /*
+     * Already signed in, so there is nothing to do on a login form — but
+     * where they get sent instead is not always `/account`. Somebody the
+     * checkout gate bounced here, who then signed in on another tab or came
+     * back to a stale link, is carrying the till in `?next=`; ignoring it
+     * would strand them one step short of the thing they were buying.
+     */
+    const next = safeNext(searchParams.get("next")) ?? "/account";
+    return NextResponse.redirect(new URL(next, request.url));
   }
   return NextResponse.next();
 }

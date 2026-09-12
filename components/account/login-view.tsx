@@ -4,111 +4,141 @@ import { Fragment, useActionState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { login, type FormState } from "@/app/actions/auth";
-import { TextField } from "@/components/forms/fields";
+import { AuthShell, Notice, Reasons } from "@/components/account/auth-shell";
+import { PasswordField, TextField } from "@/components/forms/fields";
 import { Magnetic } from "@/components/ui/magnetic";
-import { Lines, Reveal } from "@/components/ui/reveal";
 
 /**
  * Sign in. `login` is a Server Action — the password crosses the wire once,
  * server to server, to nisir-backend; this component never sees the result
  * beyond "it worked" (a redirect) or a message to show.
  *
- * `expired` says the visitor did not come here by choice: their session was
- * cross-checked against the backend and found revoked. Worth saying out loud,
- * because from where they sit a signed-in account page just turned into a
- * login form.
+ * Three reasons somebody is looking at this form, and it says which:
+ *
+ *   expired  their session was cross-checked against the backend and found
+ *            revoked. Worth stating plainly, because from where they sit a
+ *            signed-in account page simply turned into a login form.
+ *   reset    they have just changed their password and every device was
+ *            signed out, this one included.
+ *   next     the checkout gate stopped them, or `proxy.ts` did. Signing in
+ *            returns them there rather than to the account page.
  */
-export function LoginView({ expired = false, reset = false }: { expired?: boolean; reset?: boolean }) {
+export function LoginView({
+  expired = false,
+  reset = false,
+  next,
+}: {
+  expired?: boolean;
+  reset?: boolean;
+  next?: string | null;
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(login, undefined);
 
+  const fromCheckout = next?.startsWith("/store/checkout") ?? false;
+
   return (
-    <main id="main">
-      <section className="slab-ink pb-16 pt-[calc(var(--header-h)+clamp(48px,10vh,120px))]">
-        <div className="shell">
-          <Reveal immediate y={10}>
-            <p className="marker tag-sm">
-              <Link href="/" className="ul transition-colors hover:text-accent">
-                Home
-              </Link>
-              <span className="text-faint">Sign in</span>
-            </p>
-          </Reveal>
+    <AuthShell
+      crumb="Sign in"
+      lines={[
+        <Fragment key="a">Sign back</Fragment>,
+        <Fragment key="b">
+          <span className="thin text-gold">in</span>.
+        </Fragment>,
+      ]}
+      lede={
+        fromCheckout
+          ? "Sign in to finish checking out. Your cart is held exactly as you left it."
+          : "Your orders, your saved objects and your print status, wherever you signed in from."
+      }
+      aside={
+        <Reasons
+          items={[
+            {
+              title: "Orders and print status",
+              detail: "Everything you have commissioned, and where each piece is in the queue.",
+            },
+            {
+              title: "Saved objects",
+              detail: "The pieces you set aside, on the account rather than in one browser.",
+            },
+          ]}
+        />
+      }
+    >
+      <motion.form
+        action={action}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="flex flex-col gap-8"
+      >
+        {next && <input type="hidden" name="next" value={next} />}
 
-          <Lines
-            as="h1"
-            immediate
-            delay={0.12}
-            className="d1 mt-8 max-w-[13ch]"
-            lines={[
-              <Fragment key="a">Sign back</Fragment>,
-              <Fragment key="b">
-                <span className="thin text-gold">in</span>.
-              </Fragment>,
-            ]}
-          />
+        {fromCheckout && !expired && (
+          <Notice tone="gold">
+            One step from checkout. Signing in takes you straight back to your cart.
+          </Notice>
+        )}
+
+        {reset && (
+          <Notice>
+            Your password has been changed, and every other device has been signed out. Sign
+            in with the new one.
+          </Notice>
+        )}
+
+        {expired && (
+          <Notice>
+            That session has ended — you signed out somewhere else, or it was revoked. Sign in
+            again to pick up where you left off.
+          </Notice>
+        )}
+
+        <TextField
+          name="email"
+          label="Email"
+          type="email"
+          required
+          placeholder="you@example.com"
+          autoComplete="email"
+          autoFocus
+          error={state?.errors?.email?.[0]}
+        />
+
+        <PasswordField
+          name="password"
+          label="Password"
+          required
+          placeholder="••••••••"
+          autoComplete="current-password"
+          error={state?.errors?.password?.[0]}
+        />
+
+        {state?.message && (
+          <p role="alert" className="text-[13px] text-accent">
+            {state.message}
+          </p>
+        )}
+
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-8 gap-y-6">
+          <Magnetic strength={0.25}>
+            <button type="submit" disabled={pending} className="btn btn-solid disabled:opacity-60">
+              {pending ? "Signing in…" : "Sign in"}
+            </button>
+          </Magnetic>
+          <div className="flex flex-col gap-2 sm:items-end">
+            <Link
+              href={next ? `/account/signup?next=${encodeURIComponent(next)}` : "/account/signup"}
+              className="tag-sm ul text-muted hover:text-accent"
+            >
+              New here? Create an account
+            </Link>
+            <Link href="/account/forgot-password" className="tag-sm ul text-faint hover:text-accent">
+              Forgot your password?
+            </Link>
+          </div>
         </div>
-      </section>
-
-      <section className="pb-24">
-        <div className="shell max-w-md">
-          <motion.form
-            action={action}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col gap-8"
-          >
-            {reset && (
-              <p className="border-l-2 border-gold pl-4 text-[13px] leading-relaxed text-muted">
-                Your password has been changed, and every other device has been
-                signed out. Sign in with the new one.
-              </p>
-            )}
-
-            {expired && (
-              <p className="border-l-2 border-gold pl-4 text-[13px] leading-relaxed text-muted">
-                That session has ended — you signed out somewhere else, or it was
-                revoked. Sign in again to pick up where you left off.
-              </p>
-            )}
-
-            <div>
-              <TextField name="email" label="Email" type="email" required placeholder="you@example.com" />
-              {state?.errors?.email && (
-                <p className="mt-2 text-[13px] text-accent">{state.errors.email[0]}</p>
-              )}
-            </div>
-
-            <div>
-              <TextField name="password" label="Password" type="password" required placeholder="••••••••" />
-              {state?.errors?.password && (
-                <p className="mt-2 text-[13px] text-accent">{state.errors.password[0]}</p>
-              )}
-            </div>
-
-            {state?.message && <p className="text-[13px] text-accent">{state.message}</p>}
-
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-6">
-              <Magnetic strength={0.25}>
-                <button type="submit" disabled={pending} className="btn btn-solid">
-                  {pending ? "Signing in…" : "Sign in"}
-                </button>
-              </Magnetic>
-              <div className="flex flex-col items-end gap-2">
-                <Link href="/account/signup" className="tag-sm ul text-muted hover:text-accent">
-                  New here? Create an account
-                </Link>
-                <Link
-                  href="/account/forgot-password"
-                  className="tag-sm ul text-faint hover:text-accent"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
-            </div>
-          </motion.form>
-        </div>
-      </section>
-    </main>
+      </motion.form>
+    </AuthShell>
   );
 }

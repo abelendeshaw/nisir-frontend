@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginView } from "@/components/account/login-view";
+import { safeNext } from "@/lib/auth/next-path";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -14,5 +15,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/account/lo
   // visible reason.
   const params = await searchParams;
 
-  return <LoginView expired={"expired" in params} reset={"reset" in params} />;
+  return (
+    <LoginView
+      expired={"expired" in params}
+      reset={"reset" in params}
+      // Set by the checkout gate and by `proxy.ts`. Sanitised here rather
+      // than in the view, so the client component is handed a path that is
+      // already known to be safe to submit back.
+      next={safeNext(params.next)}
+    />
+  );
 }
