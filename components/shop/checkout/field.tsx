@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
  */
 
 export function Field({
+  name,
   label,
   value,
   onChange,
@@ -23,6 +24,12 @@ export function Field({
   className,
   required = true,
 }: {
+  /**
+   * Stable id for the input, so a failed validation pass can put the cursor in
+   * the first field it rejected. Without one the id comes from `useId()`, which
+   * the caller cannot know and therefore cannot focus.
+   */
+  name?: string;
   label: string;
   value: string;
   onChange: (next: string) => void;
@@ -36,7 +43,8 @@ export function Field({
   className?: string;
   required?: boolean;
 }) {
-  const id = useId();
+  const generated = useId();
+  const id = name ?? generated;
 
   return (
     <div className={cn("group relative min-w-0", className)}>
@@ -48,7 +56,18 @@ export function Field({
         )}
       >
         {label}
-        {!required && <span className="ml-2 normal-case tracking-normal text-faint">optional</span>}
+        {/* Marked in both directions on purpose. Most of checkout is required,
+            so an "optional" tag alone left the required ones looking unmarked —
+            you had to notice the absence of a word to know a field was needed.
+            The asterisk states it outright; the input carries `required` so a
+            screen reader hears it without depending on the glyph. */}
+        {required ? (
+          <span aria-hidden className="ml-1 align-super text-[0.85em] text-accent">
+            *
+          </span>
+        ) : (
+          <span className="ml-2 normal-case tracking-normal text-faint">optional</span>
+        )}
       </label>
       <div className="relative mt-3">
         <input
@@ -60,6 +79,8 @@ export function Field({
           autoComplete={autoComplete}
           inputMode={inputMode}
           maxLength={maxLength}
+          required={required}
+          aria-required={required}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
           className="w-full bg-transparent pb-3 text-[15px] text-fg outline-none placeholder:text-faint"

@@ -11,6 +11,7 @@ import { LineRow } from "@/components/shop/line-row";
 import { Summary, useAppliedPromo } from "@/components/shop/summary";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { Magnetic } from "@/components/ui/magnetic";
+import { Toast } from "@/components/ui/toast";
 import { money } from "@/lib/shop/format";
 import { getProduct } from "@/lib/shop/catalog";
 import {
@@ -30,6 +31,27 @@ import { cn } from "@/lib/utils";
 type StepId = "contact" | "delivery" | "payment" | "review";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/**
+ * Error keys to the words on screen, for the toast.
+ *
+ * The keys are also the input ids (see the `name` prop on `Field`), which is
+ * what lets a failed pass focus the first offender. Region and postal read
+ * differently by destination, so those two are resolved at call time.
+ */
+const FIELD_LABELS: Record<string, string> = {
+  name: "Name",
+  email: "Email",
+  phone: "Phone",
+  line1: "Address",
+  city: "City",
+  region: "Region",
+  postal: "Postal code",
+  number: "Card number",
+  expiry: "Expiry",
+  cvc: "CVC",
+  handset: "Mobile number",
+};
 
 /** Rush tiers set the print queue; these are the days they buy. */
 const customLead: Record<string, [number, number]> = {
@@ -88,6 +110,8 @@ export function CheckoutFlow({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  /** Field labels for the toast, or null when there is nothing to announce. */
+  const [alert, setAlert] = useState<string[] | null>(null);
 
   const totals = calculateTotals(cart.lines, { zone, shipping, promo });
   const shippingMethod = findMethod(zone, shipping);
@@ -128,6 +152,23 @@ export function CheckoutFlow({
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(contact.email)) {
         next.email = "A working email — the receipt and the files go there.";
       }
+      /*
+       * Required, and it always was — `contact.phone` is `required` in the
+       * backend's `StoreOrderRequest`. The field said "optional", so a shopper
+       * could leave it empty, walk the whole flow, press Pay, and only then be
+       * told "The contact.phone field is required." in the backend's words
+       * rather than ours. Checked here so the disagreement cannot happen.
+       *
+       * Digits, not a format: the shop ships to Canada, Ethiopia and anywhere
+       * else, and a regex tight enough to be worth having would reject some
+       * country's perfectly good number.
+       */
+      const digits = contact.phone.replace(/\D/g, "");
+      if (!contact.phone.trim()) {
+        next.phone = "A number the courier can reach you on.";
+      } else if (digits.length < 7) {
+        next.phone = "That looks too short for a phone number.";
+      }
     }
 
     if (target === "delivery") {
@@ -154,10 +195,48 @@ export function CheckoutFlow({
     return next;
   }
 
+  /**
+   * Puts the cursor in the first field that failed, and says so out loud.
+   *
+   * The errors themselves render under their inputs, which is where they
+   * belong — but a step can be taller than the phone showing it, so pressing
+   * Continue could look like it did nothing at all. This names what is wrong
+   * from a fixed corner and scrolls the offender into view.
+   *
+   * Deferred a frame because on `placeOrder` the step usually changes first,
+   * and the field being focused does not exist until that step has rendered.
+   */
+  function reportInvalid(found: Record<string, string>, target: StepId) {
+    const keys = Object.keys(found);
+    setAlert(
+      keys.map((key) => {
+        // `validateCard` also calls its cardholder field `name`, so the label
+        // depends on which step is asking. The two never collide in the DOM —
+        // one step is mounted at a time — so the shared id still focuses the
+        // right input.
+        if (key === "name" && target === "payment") return "Name on card";
+        if (key === "region") return zone === "ca" ? "Province" : "Region";
+        if (key === "postal") return zone === "ca" ? "Postal code" : "Postal / ZIP";
+        return FIELD_LABELS[key] ?? key;
+      }),
+    );
+
+    requestAnimationFrame(() => {
+      const first = document.getElementById(keys[0]);
+      if (!(first instanceof HTMLElement)) return;
+      first.scrollIntoView({ behavior: "smooth", block: "center" });
+      first.focus({ preventScroll: true });
+    });
+  }
+
   function advance() {
     const found = validate(step);
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      reportInvalid(found, step);
+      return;
+    }
+    setAlert(null);
     const next = steps[position + 1];
     if (next) setStep(next);
   }
@@ -170,9 +249,13 @@ export function CheckoutFlow({
       if (Object.keys(found).length > 0) {
         setErrors(found);
         setStep(target);
+        // Being sent back three steps with no explanation is the worst version
+        // of this: say which fields, on which step, and land the cursor there.
+        reportInvalid(found, target);
         return;
       }
     }
+    setAlert(null);
 
     setBusy(true);
     setSubmitError(null);
@@ -303,6 +386,7 @@ export function CheckoutFlow({
                 {step === "contact" && (
                   <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
                     <Field
+                      name="name"
                       label="Name"
                       value={contact.name}
                       onChange={(next) => setContact({ ...contact, name: next })}
@@ -312,6 +396,7 @@ export function CheckoutFlow({
                       className="sm:col-span-2"
                     />
                     <Field
+                      name="email"
                       label="Email"
                       value={contact.email}
                       onChange={(next) => setContact({ ...contact, email: next })}
@@ -323,14 +408,16 @@ export function CheckoutFlow({
                       hint="The receipt, the tracking and any digital files go here."
                     />
                     <Field
+                      name="phone"
                       label="Phone"
                       value={contact.phone}
                       onChange={(next) => setContact({ ...contact, phone: next })}
-                      placeholder="Optional"
+                      error={errors.phone}
+                      placeholder="+1 416 555 0134"
                       autoComplete="tel"
                       inputMode="tel"
-                      required={false}
-                      hint="Only used if the courier needs it."
+                      maxLength={40}
+                      hint="The courier needs a number before they will take a parcel."
                     />
                   </div>
                 )}
@@ -358,6 +445,7 @@ export function CheckoutFlow({
                     {!shippingMethod?.pickup && (
                       <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
                         <Field
+                          name="line1"
                           label="Address"
                           value={address.line1}
                           onChange={(next) => setAddress({ ...address, line1: next })}
@@ -367,6 +455,7 @@ export function CheckoutFlow({
                           className="sm:col-span-2"
                         />
                         <Field
+                          name="line2"
                           label="Apartment, suite"
                           value={address.line2}
                           onChange={(next) => setAddress({ ...address, line2: next })}
@@ -376,6 +465,7 @@ export function CheckoutFlow({
                           className="sm:col-span-2"
                         />
                         <Field
+                          name="city"
                           label="City"
                           value={address.city}
                           onChange={(next) => setAddress({ ...address, city: next })}
@@ -384,6 +474,7 @@ export function CheckoutFlow({
                           autoComplete="address-level2"
                         />
                         <Field
+                          name="region"
                           label={zone === "ca" ? "Province" : "Region"}
                           value={address.region}
                           onChange={(next) => setAddress({ ...address, region: next })}
@@ -392,6 +483,7 @@ export function CheckoutFlow({
                           autoComplete="address-level1"
                         />
                         <Field
+                          name="postal"
                           label={zone === "ca" ? "Postal code" : "Postal / ZIP"}
                           value={address.postal}
                           onChange={(next) => setAddress({ ...address, postal: next })}
@@ -542,6 +634,17 @@ export function CheckoutFlow({
           </div>
         </div>
       </section>
+
+      <Toast
+        open={alert !== null}
+        title={
+          alert && alert.length === 1
+            ? "One field needs your attention."
+            : `${alert?.length ?? 0} fields need your attention.`
+        }
+        items={alert ?? undefined}
+        onDismiss={() => setAlert(null)}
+      />
     </main>
   );
 }

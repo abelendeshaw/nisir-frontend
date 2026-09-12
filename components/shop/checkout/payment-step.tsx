@@ -78,6 +78,7 @@ export function PaymentStep({
           {method === "card" && (
             <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
               <Field
+                name="number"
                 label="Card number"
                 value={card.number}
                 onChange={(next) => onCard({ ...card, number: formatCardNumber(next) })}
@@ -90,6 +91,7 @@ export function PaymentStep({
                 className="sm:col-span-2"
               />
               <Field
+                name="name"
                 label="Name on card"
                 value={card.name}
                 onChange={(next) => onCard({ ...card, name: next })}
@@ -99,6 +101,7 @@ export function PaymentStep({
                 className="sm:col-span-2"
               />
               <Field
+                name="expiry"
                 label="Expiry"
                 value={card.expiry}
                 onChange={(next) => onCard({ ...card, expiry: formatExpiry(next) })}
@@ -109,6 +112,7 @@ export function PaymentStep({
                 maxLength={5}
               />
               <Field
+                name="cvc"
                 label="Security code"
                 value={card.cvc}
                 onChange={(next) => onCard({ ...card, cvc: next.replace(/\D/g, "").slice(0, 4) })}
@@ -126,6 +130,7 @@ export function PaymentStep({
           {(method === "telebirr" || method === "cbe") && (
             <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
               <Field
+                name="handset"
                 label="Mobile number"
                 value={handset}
                 onChange={onHandset}
