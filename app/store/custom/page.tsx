@@ -6,6 +6,7 @@ import { InquiryForm } from "@/components/forms/inquiry";
 import { DimensionsField, FileField, NumberField, SelectField } from "@/components/forms/fields";
 import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { ArrowLink } from "@/components/ui/links";
+import { SERVICES_LIVE } from "@/lib/flags";
 import { BUILD_VOLUME_MM } from "@/lib/shop/quote";
 import { loadCatalog } from "@/lib/shop/catalog-server";
 
@@ -142,8 +143,11 @@ export default async function CustomPage() {
               print against the same numbers as above, and send both back before anything is made.
             </p>
             <div className="mt-10">
-              <ArrowLink href="/services/3d-modelling" className="tag">
-                How the modelling works
+              <ArrowLink
+                href={SERVICES_LIVE ? "/services/3d-modelling" : "/contact"}
+                className="tag"
+              >
+                {SERVICES_LIVE ? "How the modelling works" : "Ask about the modelling"}
               </ArrowLink>
             </div>
           </Reveal>

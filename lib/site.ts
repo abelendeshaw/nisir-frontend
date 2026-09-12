@@ -4,6 +4,8 @@
  * section all read from one place.
  */
 
+import { SERVICES_LIVE } from "@/lib/flags";
+
 export const site = {
   name: "Nisir",
   legalName: "Nisir Designs",
@@ -25,6 +27,11 @@ export const site = {
   founded: 2019,
 } as const;
 
+/**
+ * The full site map, indices and all. Kept complete even when a section is
+ * switched off, so the numbering does not shuffle every time one comes and
+ * goes — `02` is the Studio whether or not Services is showing.
+ */
 export const nav = [
   { href: "/", label: "Index", index: "00" },
   { href: "/services", label: "Services", index: "01" },
@@ -32,6 +39,26 @@ export const nav = [
   { href: "/store", label: "Store", index: "03" },
   { href: "/contact", label: "Contact", index: "04" },
 ] as const;
+
+/**
+ * What visitors are actually offered. Everything that reads navigation reads
+ * this, not `nav` — one filter, so a section cannot be hidden in the header
+ * and left linked in the footer.
+ */
+export const liveNav = nav.filter((item) => SERVICES_LIVE || item.href !== "/services");
+
+/**
+ * The header's middle rail.
+ *
+ * Stated as what it excludes rather than as `slice(1, 4)`: the mark already
+ * links home and "Start a project" already links to contact, so those two are
+ * the exclusions. The old slice silently changed meaning the moment the list
+ * it indexed into got shorter — dropping Services from it would have pulled
+ * Contact into the header beside the button that already goes there.
+ */
+export const headerNav = liveNav.filter(
+  (item) => item.href !== "/" && item.href !== "/contact",
+);
 
 export const locations = [
   {

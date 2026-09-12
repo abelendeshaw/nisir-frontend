@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Mark } from "@/components/chrome/mark";
+import { SERVICES_LIVE } from "@/lib/flags";
 
 export default function NotFound() {
   return (
@@ -26,9 +27,17 @@ export default function NotFound() {
           <Link href="/" className="btn btn-solid">
             Back to index
           </Link>
-          <Link href="/services" className="btn btn-ghost">
-            Services
-          </Link>
+          {/* Pointed at the store while services is off — a 404 offering a
+              second dead end is worse than offering none. */}
+          {SERVICES_LIVE ? (
+            <Link href="/services" className="btn btn-ghost">
+              Services
+            </Link>
+          ) : (
+            <Link href="/store" className="btn btn-ghost">
+              The store
+            </Link>
+          )}
         </div>
       </div>
     </main>

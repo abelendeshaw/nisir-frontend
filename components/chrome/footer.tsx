@@ -5,9 +5,11 @@ import { motion } from "motion/react";
 import { Wordmark } from "@/components/chrome/mark";
 import { Magnetic } from "@/components/ui/magnetic";
 import { Scramble } from "@/components/ui/links";
+import { SERVICES_LIVE } from "@/lib/flags";
 import { legalPages } from "@/lib/legal";
 import { services, serviceName } from "@/lib/services";
-import { locations, nav, site, social } from "@/lib/site";
+import { liveNav, locations, site, social } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 const shopLinks = [
   { href: "/store", label: "All objects" },
@@ -46,27 +48,36 @@ export function Footer() {
         </div>
 
         {/* Index */}
-        <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="tag-sm mb-5 text-bone/40">Services</p>
-            <ul className="flex flex-col gap-2.5">
-              {services.map((service) => (
-                <li key={service.slug}>
-                  <Link
-                    href={`/services/${service.slug}`}
-                    className="ul text-[15px] text-bone/70 transition-colors duration-300 hover:text-gold"
-                  >
-                    {serviceName(service)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* One column narrower while Services is switched off, so the
+            remaining three spread rather than leaving a hole where it was. */}
+        <div
+          className={cn(
+            "grid gap-12 py-16 sm:grid-cols-2",
+            SERVICES_LIVE ? "lg:grid-cols-4" : "lg:grid-cols-3",
+          )}
+        >
+          {SERVICES_LIVE && (
+            <div>
+              <p className="tag-sm mb-5 text-bone/40">Services</p>
+              <ul className="flex flex-col gap-2.5">
+                {services.map((service) => (
+                  <li key={service.slug}>
+                    <Link
+                      href={`/services/${service.slug}`}
+                      className="ul text-[15px] text-bone/70 transition-colors duration-300 hover:text-gold"
+                    >
+                      {serviceName(service)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div>
             <p className="tag-sm mb-5 text-bone/40">Studio</p>
             <ul className="flex flex-col gap-2.5">
-              {nav.slice(1).map((item) => (
+              {liveNav.slice(1).map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}

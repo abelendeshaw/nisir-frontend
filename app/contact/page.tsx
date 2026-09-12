@@ -4,6 +4,7 @@ import Link from "next/link";
 import { InquiryForm } from "@/components/forms/inquiry";
 import { SelectField } from "@/components/forms/fields";
 import { Lines, Reveal } from "@/components/ui/reveal";
+import { SERVICES_LIVE } from "@/lib/flags";
 import { services, serviceName } from "@/lib/services";
 import { locations, site, social } from "@/lib/site";
 
@@ -91,20 +92,26 @@ export default function ContactPage() {
               </dl>
             </Reveal>
 
-            <Reveal delay={0.16} className="mt-12">
-              <p className="tag-sm mb-4 text-faint">Go direct</p>
-              <div className="flex flex-wrap gap-2">
-                {services.map((service) => (
-                  <Link
-                    key={service.slug}
-                    href={`/services/${service.slug}#inquiry`}
-                    className="tag-sm rounded-full border border-line px-3.5 py-2.5 text-muted transition-colors duration-300 hover:border-accent hover:text-fg"
-                  >
-                    {serviceName(service)}
-                  </Link>
-                ))}
-              </div>
-            </Reveal>
+            {/* Every one of these pills is a link into `/services/:slug`, so
+                they go when that section does. The picker in the form below
+                stays — it asks what work you want, which is a different
+                question from whether there is a page describing it. */}
+            {SERVICES_LIVE && (
+              <Reveal delay={0.16} className="mt-12">
+                <p className="tag-sm mb-4 text-faint">Go direct</p>
+                <div className="flex flex-wrap gap-2">
+                  {services.map((service) => (
+                    <Link
+                      key={service.slug}
+                      href={`/services/${service.slug}#inquiry`}
+                      className="tag-sm rounded-full border border-line px-3.5 py-2.5 text-muted transition-colors duration-300 hover:border-accent hover:text-fg"
+                    >
+                      {serviceName(service)}
+                    </Link>
+                  ))}
+                </div>
+              </Reveal>
+            )}
           </div>
 
           <Reveal delay={0.08}>

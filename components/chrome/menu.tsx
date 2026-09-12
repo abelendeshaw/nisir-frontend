@@ -5,8 +5,9 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Mark } from "@/components/chrome/mark";
 import { Plate } from "@/components/ui/plate";
+import { SERVICES_LIVE } from "@/lib/flags";
 import { services, serviceName } from "@/lib/services";
-import { locations, nav, site, social } from "@/lib/site";
+import { liveNav, locations, site, social } from "@/lib/site";
 import { useState } from "react";
 
 const EASE = [0.76, 0, 0.24, 1] as const;
@@ -85,7 +86,7 @@ export function Menu({
           <div className="grid flex-1 overflow-y-auto lg:grid-cols-[1.15fr_0.85fr]">
             {/* Destinations */}
             <nav className="flex flex-col justify-center gap-1 px-[var(--gutter)] py-14">
-              {nav.slice(1).map((item, i) => (
+              {liveNav.slice(1).map((item, i) => (
                 <motion.div
                   key={item.href}
                   initial={{ y: 40, opacity: 0 }}
@@ -168,33 +169,37 @@ export function Menu({
               transition={{ duration: 0.6, delay: 0.42 }}
               className="flex flex-col justify-between gap-10 border-line px-[var(--gutter)] pb-12 pt-4 lg:border-l lg:py-14"
             >
-              <div className="grid gap-8 lg:grid-cols-[1fr_auto]">
-                <ul className="flex flex-col gap-0.5">
-                  <li className="tag-sm mb-3 text-faint">Services — 07</li>
-                  {services.map((service) => (
-                    <li key={service.slug}>
-                      <Link
-                        href={`/services/${service.slug}`}
-                        onClick={onClose}
-                        onMouseEnter={() => setPreview(service)}
-                        className="group flex items-center gap-3 py-1.5 text-[15px] text-muted transition-colors duration-300 hover:text-fg"
-                      >
-                        <span className="tag-sm text-faint">{service.number}</span>
-                        <span className="ul">{serviceName(service)}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+              {/* Switched off with the section itself — see lib/flags.ts. The
+                  markup stays so turning it back on is one boolean. */}
+              {SERVICES_LIVE && (
+                <div className="grid gap-8 lg:grid-cols-[1fr_auto]">
+                  <ul className="flex flex-col gap-0.5">
+                    <li className="tag-sm mb-3 text-faint">Services — 07</li>
+                    {services.map((service) => (
+                      <li key={service.slug}>
+                        <Link
+                          href={`/services/${service.slug}`}
+                          onClick={onClose}
+                          onMouseEnter={() => setPreview(service)}
+                          className="group flex items-center gap-3 py-1.5 text-[15px] text-muted transition-colors duration-300 hover:text-fg"
+                        >
+                          <span className="tag-sm text-faint">{service.number}</span>
+                          <span className="ul">{serviceName(service)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
 
-                <div className="hidden w-52 lg:block">
-                  <Plate
-                    key={preview.slug}
-                    kind={preview.plate}
-                    className="aspect-4/5"
-                    index={preview.number}
-                  />
+                  <div className="hidden w-52 lg:block">
+                    <Plate
+                      key={preview.slug}
+                      kind={preview.plate}
+                      className="aspect-4/5"
+                      index={preview.number}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex flex-wrap items-end justify-between gap-8">
                 <ul className="flex flex-col gap-1.5">

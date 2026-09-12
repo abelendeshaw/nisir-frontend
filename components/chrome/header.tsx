@@ -9,7 +9,7 @@ import { Menu } from "@/components/chrome/menu";
 import { CartButton, WishlistLink } from "@/components/shop/cart-drawer";
 import { FlipLink } from "@/components/ui/links";
 import { Magnetic } from "@/components/ui/magnetic";
-import { nav } from "@/lib/site";
+import { headerNav } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,7 +55,7 @@ export function Header({ user }: { user: { name: string } | null }) {
           </Link>
 
           <nav className="hidden items-center gap-9 lg:flex" aria-label="Primary">
-            {nav.slice(1, 4).map((item) => (
+            {headerNav.map((item) => (
               <FlipLink
                 key={item.href}
                 href={item.href}

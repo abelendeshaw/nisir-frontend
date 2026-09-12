@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { SERVICES_LIVE } from "./lib/flags";
+
 /**
  * Headers every response carries.
  *
@@ -59,10 +61,36 @@ const nextConfig: NextConfig = {
   async redirects() {
     // Old paths from earlier drafts: /about became /studio, and capabilities
     // became services. Keep both alive rather than breaking shared links.
+    if (SERVICES_LIVE) {
+      return [
+        { source: "/about", destination: "/studio", permanent: true },
+        { source: "/capabilities", destination: "/services", permanent: true },
+        { source: "/capabilities/:slug", destination: "/services/:slug", permanent: true },
+      ];
+    }
+
+    /*
+     * Services is switched off (see `lib/flags.ts`), so the section is closed
+     * at the front door. Redirects are checked before the filesystem, which
+     * means nothing under `app/services/` ever runs while it stays in the
+     * repo intact — turning the flag back on restores the section with no
+     * code to rewrite.
+     *
+     * `permanent: false` deliberately. A 308 tells Google the page is gone
+     * for good and is cached hard by browsers, which would be difficult to
+     * undo for anyone who had visited; a 307 keeps the URL in the index to be
+     * re-crawled and leaves nothing stale behind. This section is coming back.
+     *
+     * The `/capabilities` pair is re-pointed rather than left alone: aiming a
+     * permanent redirect at a temporarily redirected path would send visitors
+     * through two hops and cache the first of them forever.
+     */
     return [
       { source: "/about", destination: "/studio", permanent: true },
-      { source: "/capabilities", destination: "/services", permanent: true },
-      { source: "/capabilities/:slug", destination: "/services/:slug", permanent: true },
+      { source: "/capabilities", destination: "/", permanent: false },
+      { source: "/capabilities/:slug", destination: "/", permanent: false },
+      { source: "/services", destination: "/", permanent: false },
+      { source: "/services/:slug", destination: "/", permanent: false },
     ];
   },
 };

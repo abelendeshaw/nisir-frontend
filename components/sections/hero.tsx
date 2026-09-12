@@ -8,6 +8,7 @@ import { MarkOrigin, markSlotClass, useMarkTravel } from "@/components/chrome/ma
 import { Marquee } from "@/components/ui/marquee";
 import { Lines, Reveal } from "@/components/ui/reveal";
 import { Magnetic } from "@/components/ui/magnetic";
+import { SERVICES_LIVE } from "@/lib/flags";
 import { services, serviceName } from "@/lib/services";
 import { cn } from "@/lib/utils";
 
@@ -68,17 +69,33 @@ export function Hero() {
               One studio across two continents, building the digital, the printed and the
               physical — and teaching the craft behind them.
             </p>
+            {/*
+              "Seven services" was the solid button here. With that section
+              switched off (lib/flags.ts) the hero would have been left with a
+              single outlined control, so starting a project takes the primary
+              slot it was always the second half of, and the store — which is
+              ready, and has real objects in it — takes the secondary.
+            */}
             <div className="flex flex-wrap items-center gap-3">
+              {SERVICES_LIVE && (
+                <Magnetic strength={0.25}>
+                  <Link href="/services" className="btn btn-solid">
+                    Seven services
+                  </Link>
+                </Magnetic>
+              )}
               <Magnetic strength={0.25}>
-                <Link href="/services" className="btn btn-solid">
-                  Seven services
-                </Link>
-              </Magnetic>
-              <Magnetic strength={0.2}>
-                <Link href="/contact" className="btn">
+                <Link href="/contact" className={SERVICES_LIVE ? "btn" : "btn btn-solid"}>
                   Start a project
                 </Link>
               </Magnetic>
+              {!SERVICES_LIVE && (
+                <Magnetic strength={0.2}>
+                  <Link href="/store" className="btn">
+                    Browse the store
+                  </Link>
+                </Magnetic>
+              )}
             </div>
           </div>
         </Reveal>

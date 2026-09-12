@@ -8,6 +8,7 @@ import { Lines, Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { ArrowLink } from "@/components/ui/links";
 import { Magnetic } from "@/components/ui/magnetic";
 import { Marquee } from "@/components/ui/marquee";
+import { SERVICES_LIVE } from "@/lib/flags";
 import { loadCatalog } from "@/lib/shop/catalog-server";
 import { money } from "@/lib/shop/format";
 import { fromPrice } from "@/lib/shop/pricing";
@@ -157,7 +158,12 @@ export default async function StorePage() {
                   Open the customiser
                 </Link>
               </Magnetic>
-              <ArrowLink href="/services/3d-modelling" className="tag">
+              {/* Falls back to contact while the services section is off,
+                  rather than dangling — the ask is the same either way. */}
+              <ArrowLink
+                href={SERVICES_LIVE ? "/services/3d-modelling" : "/contact"}
+                className="tag"
+              >
                 No model yet — have one made
               </ArrowLink>
             </Reveal>
@@ -207,7 +213,7 @@ export default async function StorePage() {
             a <span className="thin text-gold">single</span>.
           </Fragment>,
         ]}
-        href="/services/3d-printing"
+        href={SERVICES_LIVE ? "/services/3d-printing" : "/contact"}
         action="Brief a print run"
       />
     </main>
