@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginView } from "@/components/account/login-view";
+import { isGoogleError } from "@/lib/auth/google";
 import { safeNext } from "@/lib/auth/next-path";
 
 export const metadata: Metadata = {
@@ -23,6 +24,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/account/lo
       // than in the view, so the client component is handed a path that is
       // already known to be safe to submit back.
       next={safeNext(params.next)}
+      // Set by `app/auth/google/complete/route.ts` when a Google sign-in
+      // came back without a session. Only known reasons are passed on.
+      google={isGoogleError(params.google) ? params.google : null}
     />
   );
 }

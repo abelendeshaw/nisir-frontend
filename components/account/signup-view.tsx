@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { signup, type FormState } from "@/app/actions/auth";
 import { AuthShell, Notice, Reasons } from "@/components/account/auth-shell";
+import { GoogleButton } from "@/components/account/google-button";
 import { Checkbox, PasswordField, TextField } from "@/components/forms/fields";
 import { Magnetic } from "@/components/ui/magnetic";
 
@@ -69,12 +70,25 @@ export function SignupView({ next }: { next?: string | null }) {
             the URL of the page that rendered its form. */}
         {next && <input type="hidden" name="next" value={next} />}
 
+        {/* A honeypot. Invisible and unreachable for a person — off-screen,
+            out of the tab order, hidden from screen readers, and exempt from
+            autofill — but a bot filling in every field it finds fills this
+            one too, and `signup` refuses the account. */}
+        <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+          <label>
+            Company
+            <input type="text" name="company" tabIndex={-1} autoComplete="off" defaultValue="" />
+          </label>
+        </div>
+
         {fromCheckout && (
           <Notice tone="gold">
             Your cart is waiting. Create an account and you will land straight back at
             checkout with it intact.
           </Notice>
         )}
+
+        <GoogleButton next={next} withTerms />
 
         <TextField
           name="name"

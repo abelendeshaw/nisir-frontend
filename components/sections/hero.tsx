@@ -34,7 +34,7 @@ export function Hero() {
     <section
       ref={(node) => {
         ref.current = node;
-        if (travel) travel.heroRef.current = node;
+        travel?.registerHero(node);
       }}
       className="slab-ink relative flex min-h-[100svh] flex-col justify-between overflow-hidden"
     >

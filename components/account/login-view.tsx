@@ -5,8 +5,25 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { login, type FormState } from "@/app/actions/auth";
 import { AuthShell, Notice, Reasons } from "@/components/account/auth-shell";
+import { GoogleButton } from "@/components/account/google-button";
 import { PasswordField, TextField } from "@/components/forms/fields";
 import { Magnetic } from "@/components/ui/magnetic";
+import type { GoogleError } from "@/lib/auth/google";
+
+/**
+ * What went wrong with "Continue with Google", in the visitor's terms. The
+ * reasons come from the API and `app/auth/google/complete/route.ts`.
+ */
+const GOOGLE_MESSAGES: Record<GoogleError, string> = {
+  cancelled: "Google sign-in was cancelled. You can try again, or use your email below.",
+  unverified:
+    "Google hasn’t verified that email address, so we can’t use it to sign you in. Verify it with Google, or use your email and password below.",
+  expired: "That Google sign-in took too long, or was started in a different browser. Try again.",
+  unavailable: "Google sign-in isn’t available right now. Use your email and password below.",
+  conflict:
+    "That email address is already linked to a different Google account. Sign in with that one, or with your email and password.",
+  failed: "Google sign-in didn’t work. Try again, or use your email and password below.",
+};
 
 /**
  * Sign in. `login` is a Server Action — the password crosses the wire once,
@@ -27,10 +44,13 @@ export function LoginView({
   expired = false,
   reset = false,
   next,
+  google = null,
 }: {
   expired?: boolean;
   reset?: boolean;
   next?: string | null;
+  /** Why a Google sign-in came back without a session, if one just did. */
+  google?: GoogleError | null;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(login, undefined);
 
@@ -93,6 +113,10 @@ export function LoginView({
             again to pick up where you left off.
           </Notice>
         )}
+
+        {google && <Notice>{GOOGLE_MESSAGES[google]}</Notice>}
+
+        <GoogleButton next={next} />
 
         <TextField
           name="email"
