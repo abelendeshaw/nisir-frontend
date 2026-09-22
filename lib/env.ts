@@ -24,6 +24,17 @@ export type ServerEnv = {
   SESSION_SECRET: string;
   /** Base URL of nisir-backend, normalised, no trailing slash. */
   NISIR_API_URL: string;
+  /**
+   * nisir-backend as a *browser* reaches it. Only "Continue with Google"
+   * uses it — the one time a visitor's browser goes to the API itself.
+   * Defaults to `NISIR_API_URL`. See `readPublicApiUrl()`.
+   */
+  NISIR_PUBLIC_API_URL: string;
+  /**
+   * The one URL segment the admin panel answers on, or null when the panel is
+   * switched off. See `readAdminPath()` and `app/(admin)/[admin]/layout.tsx`.
+   */
+  ADMIN_PATH: string | null;
   NODE_ENV: "development" | "production" | "test";
   isProduction: boolean;
 };
@@ -133,6 +144,98 @@ function readApiUrl(problems: string[], isProduction: boolean): string {
   return url.toString().replace(/\/+$/, "");
 }
 
+/**
+ * The API's address for a browser, which is not always the storefront
+ * server's: with both on one machine, `NISIR_API_URL` is loopback
+ * (`http://127.0.0.1:8000`), which a visitor's browser cannot reach. Google
+ * sign-in sends the browser to the API, so it needs the public address.
+ *
+ * Unset, it is `NISIR_API_URL`, which is right whenever that is already a
+ * public URL. Always https in production: it is the first hop of a sign-in.
+ */
+function readPublicApiUrl(problems: string[], isProduction: boolean, apiUrl: string): string {
+  const raw = process.env.NISIR_PUBLIC_API_URL?.trim();
+  if (!raw) return apiUrl;
+
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    problems.push(
+      `NISIR_PUBLIC_API_URL is not a valid absolute URL: ${JSON.stringify(raw)}.\n` +
+        "    Example:  https://api.nisirdesigns.com",
+    );
+    return "";
+  }
+
+  if (url.protocol !== "https:" && (isProduction || url.protocol !== "http:")) {
+    problems.push(
+      `NISIR_PUBLIC_API_URL must be https${isProduction ? " in production" : " or http"}, ` +
+        `not ${url.protocol.replace(":", "")}.`,
+    );
+    return "";
+  }
+
+  return url.toString().replace(/\/+$/, "");
+}
+
+/**
+ * Top-level paths the storefront already owns. The admin panel is served from
+ * a dynamic segment at the root, and a static route of the same name would win
+ * — the panel would simply never render, with nothing to say why.
+ */
+const RESERVED_ADMIN_PATHS = new Set([
+  "account",
+  "actions",
+  "api",
+  "auth",
+  "contact",
+  "legal",
+  "services",
+  "store",
+  "studio",
+]);
+
+/** Long enough that it is not a word anyone guesses. */
+const MIN_ADMIN_PATH_LENGTH = 12;
+
+/**
+ * Where the admin panel lives: `https://nisirdesigns.com/<ADMIN_PATH>`.
+ *
+ * Optional. Unset, the panel does not exist — every address it could have had
+ * is an ordinary 404. Set, it is one unguessable path segment, and anything
+ * else still 404s. This is not the lock (that is the admin login, and the
+ * backend's admin-only tokens behind it); it keeps the door itself out of
+ * sight, so the login form is not something every scanner on the internet
+ * finds at `/admin` and starts guessing passwords against.
+ */
+function readAdminPath(problems: string[]): string | null {
+  const raw = process.env.ADMIN_PATH?.trim().replace(/^\/+|\/+$/g, "");
+
+  if (!raw) return null;
+
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(raw) || raw.length > 64) {
+    problems.push(
+      "ADMIN_PATH must be a single path segment of letters, numbers, `-` and `_`, " +
+        "at most 64 characters.\n    Generate one with:  openssl rand -hex 12",
+    );
+    return null;
+  }
+  if (raw.length < MIN_ADMIN_PATH_LENGTH) {
+    problems.push(
+      `ADMIN_PATH is ${raw.length} characters; use at least ${MIN_ADMIN_PATH_LENGTH}. ` +
+        "A short path is a guessable one, and hiding the panel is its whole job.\n" +
+        "    Generate one with:  openssl rand -hex 12",
+    );
+    return null;
+  }
+  if (RESERVED_ADMIN_PATHS.has(raw.toLowerCase())) {
+    problems.push(`ADMIN_PATH cannot be "${raw}" — the storefront already has a page there.`);
+    return null;
+  }
+  return raw;
+}
+
 export class EnvironmentError extends Error {
   constructor(problems: string[], nodeEnv: ServerEnv["NODE_ENV"]) {
     const where =
@@ -168,10 +271,12 @@ export function serverEnv(): ServerEnv {
 
   const SESSION_SECRET = readSessionSecret(problems);
   const NISIR_API_URL = readApiUrl(problems, isProduction);
+  const NISIR_PUBLIC_API_URL = readPublicApiUrl(problems, isProduction, NISIR_API_URL);
+  const ADMIN_PATH = readAdminPath(problems);
 
   if (problems.length > 0) throw new EnvironmentError(problems, NODE_ENV);
 
-  cached = { SESSION_SECRET, NISIR_API_URL, NODE_ENV, isProduction };
+  cached = { SESSION_SECRET, NISIR_API_URL, NISIR_PUBLIC_API_URL, ADMIN_PATH, NODE_ENV, isProduction };
   return cached;
 }
 

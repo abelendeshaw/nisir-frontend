@@ -1,6 +1,7 @@
 import "server-only";
 
 import { apiUrl } from "@/lib/env";
+import { visitorHeaders } from "@/lib/visitor";
 
 /**
  * The one door into nisir-backend for auth. Server Actions call these; the
@@ -50,17 +51,7 @@ async function readMessage(response: Response): Promise<string | null> {
 }
 
 async function call(path: string, body: unknown): Promise<BackendUser> {
-  let response: Response;
-  try {
-    response = await fetch(apiUrl(path), {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    });
-  } catch {
-    throw new AuthError("Can't reach the server right now. Try again in a moment.");
-  }
+  const response = await post(path, body);
 
   if (response.status === 409) {
     throw new AuthError("An account with that email already exists.");
@@ -114,6 +105,20 @@ export function signupRemote(fields: { email: string; name: string; password: st
   return call("/auth/signup", fields);
 }
 
+/**
+ * The last step of "Continue with Google": trade the one-time code the API
+ * put in the redirect for the same `{id, email, name, token}` a password login
+ * returns. `nonce` is the one this browser was given when it set off (see
+ * `app/auth/google/route.ts`); a code only works with the nonce it was issued
+ * against, so a code planted in someone else's browser signs nobody in.
+ *
+ *   POST /auth/google/exchange { code, nonce } -> 200 { id, email, name, token }
+ *                                                 400 if spent, stale or foreign
+ */
+export function exchangeGoogleCodeRemote(fields: { code: string; nonce: string }) {
+  return call("/auth/google/exchange", fields);
+}
+
 export function loginRemote(fields: { email: string; password: string }) {
   return call("/auth/login", fields);
 }
@@ -129,11 +134,19 @@ export function loginRemote(fields: { email: string; password: string }) {
  *   POST /auth/reset-password  { token, email, password }  -> 200, or 400 if
  *                                                             the link is spent
  */
+
+/**
+ * Every auth request carries the visitor's address, so the backend's rate
+ * limits count attempts per visitor rather than per storefront server. See
+ * `lib/visitor.ts`.
+ */
 async function post(path: string, body: unknown): Promise<Response> {
+  const visitor = await visitorHeaders();
+
   try {
     return await fetch(apiUrl(path), {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...visitor },
       body: JSON.stringify(body),
       cache: "no-store",
     });

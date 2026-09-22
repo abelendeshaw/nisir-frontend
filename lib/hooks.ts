@@ -34,3 +34,22 @@ export function useMediaQuery(query: string) {
 export function useStillness() {
   return useMediaQuery("(prefers-reduced-motion: reduce)");
 }
+
+const subscribeToNothing = () => () => {};
+
+/**
+ * False in the server's HTML, true once React has hydrated the page.
+ *
+ * The admin panel disables its submit buttons until this flips. A form
+ * submitted before hydration goes through Next's no-JavaScript action path,
+ * and on Next 16.3 that path never answers when the action revalidates a
+ * cache tag — the change is made, and the browser waits forever. Hydration
+ * takes a moment; a button that is briefly inert is the better failure.
+ */
+export function useHydrated() {
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+}

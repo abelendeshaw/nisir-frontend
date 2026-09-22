@@ -2,6 +2,7 @@
 
 import { getUser } from "@/lib/auth/dal";
 import { apiUrl } from "@/lib/env";
+import { visitorHeaders } from "@/lib/visitor";
 import {
   OrderError,
   placeOrder,
@@ -61,11 +62,15 @@ export async function uploadCustomModel(
   const upstream = new FormData();
   upstream.append("file", file, file.name);
 
+  // The backend limits uploads per visitor, because each one is parsed and
+  // measured; without this every visitor shares one budget. See lib/visitor.ts.
+  const visitor = await visitorHeaders();
+
   let response: Response;
   try {
     response = await fetch(apiUrl("/custom/uploads"), {
       method: "POST",
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...visitor },
       body: upstream,
       cache: "no-store",
     });

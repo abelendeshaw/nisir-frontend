@@ -16,6 +16,21 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  experimental: {
+    serverActions: {
+      /*
+       * The custom-print upload (`uploadCustomModel`) and the admin panel's
+       * product photographs both arrive through Server Actions, and Next
+       * refuses any Server Action body over 1MB by default. The customiser
+       * promises models up to 120MB (`MAX_BYTES` in `lib/shop/mesh.ts`, and
+       * `MeshMeasurer::MAX_BYTES` on the backend), so without this every
+       * real-world STL failed at the moment a customer tried to buy the
+       * print. The extra megabyte is multipart overhead.
+       */
+      bodySizeLimit: "121mb",
+    },
+  },
+
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

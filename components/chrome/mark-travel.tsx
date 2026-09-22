@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -27,9 +28,16 @@ import { cn } from "@/lib/utils";
 type TravelApi = {
   originRef: RefObject<HTMLDivElement | null>;
   dockRef: RefObject<HTMLDivElement | null>;
-  heroRef: RefObject<HTMLElement | null>;
+  /**
+   * A callback ref for the hero section. A function rather than the ref
+   * object itself, so the hero hands its node over instead of reaching into
+   * a value it got from a hook and writing to it.
+   */
+  registerHero: (node: HTMLElement | null) => void;
   ready: boolean;
 };
+
+const subscribeToNothing = () => () => {};
 
 const MarkTravelContext = createContext<TravelApi | null>(null);
 
@@ -57,9 +65,13 @@ export function MarkTravel({ children }: { children: ReactNode }) {
     setLive(true);
   }, []);
 
+  const registerHero = useCallback((node: HTMLElement | null) => {
+    heroRef.current = node;
+  }, []);
+
   return (
     <MarkTravelContext.Provider
-      value={{ originRef, dockRef, heroRef, ready: !reduced && live }}
+      value={{ originRef, dockRef, registerHero, ready: !reduced && live }}
     >
       {children}
       {reduced ? null : (
@@ -197,15 +209,18 @@ function FlyingMark({
 
   useAnimationFrame(apply);
 
-  const [host, setHost] = useState<HTMLElement | null>(null);
-  useLayoutEffect(() => {
-    setHost(document.body);
-  }, []);
+  // `document.body` once hydrated, nothing on the server — read without an
+  // effect-and-setState round trip, which would render twice to learn it.
+  const host = useSyncExternalStore(
+    subscribeToNothing,
+    () => document.body,
+    () => null,
+  );
 
   if (!host) return null;
 
-  // Portalled past `app/template.tsx`: that wrapper keeps a transform, which
-  // would otherwise turn this `fixed` mark into a scrolling element.
+  // Portalled past `app/(site)/template.tsx`: that wrapper keeps a transform,
+  // which would otherwise turn this `fixed` mark into a scrolling element.
   return createPortal(
     <motion.div
       aria-hidden

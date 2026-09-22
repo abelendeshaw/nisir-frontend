@@ -54,6 +54,13 @@ export async function signup(_state: FormState, formData: FormData): Promise<For
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
+  // The honeypot in `signup-view.tsx`. Only something that fills in every
+  // field it can see puts a value here; the answer it gets is deliberately
+  // unhelpful, and the backend is never asked.
+  if (String(formData.get("company") ?? "") !== "") {
+    return { message: "Something went wrong." };
+  }
+
   const errors: NonNullable<FormState>["errors"] = {};
   if (name.length < 1) errors.name = ["Enter your name."];
   if (!EMAIL_RE.test(email)) errors.email = ["Enter a valid email."];
@@ -167,10 +174,10 @@ export async function resetPassword(
  * Signs out here and there.
  *
  * `deleteSession()` alone only forgets this browser's cookie, and the access
- * token inside it stays live on nisir-backend-php indefinitely — its
- * `sanctum.expiration` is null — so `verifiedUser()` would keep approving any
- * copy of that cookie taken from a shared machine. Revoking first is what
- * makes signing out mean something on both sides.
+ * token inside it stays live on nisir-backend-php for the rest of its week, so
+ * `verifiedUser()` would keep approving any copy of that cookie taken from a
+ * shared machine. Revoking first is what makes signing out mean something on
+ * both sides.
  *
  * Order matters: the remote call is best effort and never throws, but the
  * cookie is cleared afterwards regardless, so a customer who clicked "sign
